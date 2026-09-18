@@ -1,6 +1,7 @@
 # Wildfire PINN — 1D Heat-Equation Prototype
 
-Physics-informed neural network prototype for the 1D heat equation, a first step toward wildfire spread modeling. Master's project, San José State University.
+Physics-informed neural network prototype for the 1D heat equation, a first step toward wildfire spread modeling. Master's project, San José State University. Part of a team master's project at San José State University — this repo contains my individual PINN prototype; the full wildfire forecasting system (UNet perception, RL decisions, app) lives with the team.
+
 
 ## Method
 

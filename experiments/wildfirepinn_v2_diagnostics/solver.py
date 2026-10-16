@@ -28,13 +28,14 @@ def _one_sided(phi: np.ndarray, spacing: float, axis: int) -> tuple[np.ndarray, 
     if axis == 1:
         backward[:, 1:] = (phi[:, 1:] - phi[:, :-1]) / spacing
         forward[:, :-1] = (phi[:, 1:] - phi[:, :-1]) / spacing
-        backward[:, 0] = forward[:, 0]
-        forward[:, -1] = backward[:, -1]
+        # zero-gradient ghost cells; copying the neighbour difference is unstable with patchy R
+        backward[:, 0] = 0.0
+        forward[:, -1] = 0.0
     elif axis == 0:
         backward[1:, :] = (phi[1:, :] - phi[:-1, :]) / spacing
         forward[:-1, :] = (phi[1:, :] - phi[:-1, :]) / spacing
-        backward[0, :] = forward[0, :]
-        forward[-1, :] = backward[-1, :]
+        backward[0, :] = 0.0
+        forward[-1, :] = 0.0
     else:
         raise ValueError("axis must be 0 or 1")
     return backward, forward

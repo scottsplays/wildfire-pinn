@@ -1,0 +1,3 @@
+# Dashboard only. The forecast service requirements stay in the parent directory.
+streamlit==1.60.0
+matplotlib==3.10.7

@@ -1,0 +1,1136 @@
+[
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9619389587073609,
+    "final_symmetric_m": 12.449740610920786,
+    "final_p95_m": 26.501800153343748,
+    "final_area_error_km2": 0.02320000000000011,
+    "volume_residual_m_s": 0.007343319710344076,
+    "predicted_front_residual_m_s": 0.010198738425970078,
+    "numerical_front_residual_m_s": 0.009939066134393215,
+    "pinn_growth": {
+      "high_r_growth_m": 229.30232995430575,
+      "low_r_growth_m": 180.76270521466392
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9773650609402206,
+        "symmetric_distance_m": 5.169125128488382,
+        "p95_distance_m": 17.326684547227792,
+        "area_error_km2": 0.011600000000000055,
+        "pred_area_km2": 0.6872,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9618286728806036,
+        "symmetric_distance_m": 10.40825081669654,
+        "p95_distance_m": 23.639327872857336,
+        "area_error_km2": 0.02400000000000002,
+        "pred_area_km2": 0.896,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9619389587073609,
+        "symmetric_distance_m": 12.449740610920786,
+        "p95_distance_m": 26.501800153343748,
+        "area_error_km2": 0.02320000000000011,
+        "pred_area_km2": 1.1044,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13057,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.0201133489608765,
+        "std_abs_grad": 0.18039613962173462,
+        "p95_abs_grad": 1.3364253044128418,
+        "mean_hessian_per_m": 0.005529182963073254,
+        "p95_hessian_per_m": 0.012586533091962337,
+        "mean_abs_residual_m_s": 0.007318746764212847
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.1096397638320923,
+        "std_abs_grad": 0.2155131995677948,
+        "p95_abs_grad": 1.4603389501571655,
+        "mean_hessian_per_m": 0.007671622559428215,
+        "p95_hessian_per_m": 0.014365503564476967,
+        "mean_abs_residual_m_s": 0.010198738425970078
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 6.945975224196511,
+      "mean_overshoot_m": 15.115516176964366,
+      "mean_undershoot_m": -8.412761767007053,
+      "overshoot_fraction": 0.6527777777777778,
+      "mean_speed_error_m_s": 0.0017364938060491276,
+      "mean_speed_minus_local_R_m_s": 0.004000306556801964,
+      "high_R_mean_displacement_m": 9.173165765265482,
+      "low_R_mean_displacement_m": 6.236211205614092,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.038676576544226224,
+        "rms_radius_m": 35.20958299582324
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.005059413478307106,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1104400.0
+      ],
+      "largest_component_m2": 1104400.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 48.53962473964182,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": 3.5341627880011117,
+    "correct_sign": true,
+    "name": "F1",
+    "seed": 0,
+    "train_seconds": 47.483650400012266,
+    "sampling": "uniform",
+    "eikonal_weight": 0.0,
+    "retrained": true
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9429090909090909,
+    "final_symmetric_m": 16.378094504829257,
+    "final_p95_m": 35.210381647250465,
+    "final_area_error_km2": -0.02519999999999989,
+    "volume_residual_m_s": 0.012083115987479687,
+    "predicted_front_residual_m_s": 0.015926791355013847,
+    "numerical_front_residual_m_s": 0.01591707393527031,
+    "pinn_growth": {
+      "high_r_growth_m": 219.50533195860973,
+      "low_r_growth_m": 167.68758522806067
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9730679156908665,
+        "symmetric_distance_m": 8.155118834077669,
+        "p95_distance_m": 17.27979000534519,
+        "area_error_km2": -0.0031999999999999806,
+        "pred_area_km2": 0.6724,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9578422484134179,
+        "symmetric_distance_m": 11.361932215013727,
+        "p95_distance_m": 30.049569279188276,
+        "area_error_km2": -0.01639999999999997,
+        "pred_area_km2": 0.8556,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9429090909090909,
+        "symmetric_distance_m": 16.378094504829257,
+        "p95_distance_m": 35.210381647250465,
+        "area_error_km2": -0.02519999999999989,
+        "pred_area_km2": 1.056,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13057,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.04823899269104,
+        "std_abs_grad": 0.28665241599082947,
+        "p95_abs_grad": 1.550880789756775,
+        "mean_hessian_per_m": 0.008796962909400463,
+        "p95_hessian_per_m": 0.02192942053079605,
+        "mean_abs_residual_m_s": 0.012264203280210495
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.1267451047897339,
+        "std_abs_grad": 0.35137543082237244,
+        "p95_abs_grad": 1.7281631231307983,
+        "mean_hessian_per_m": 0.013487628661096096,
+        "p95_hessian_per_m": 0.029521364718675613,
+        "mean_abs_residual_m_s": 0.015926791355013847
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": -6.1731438472711915,
+      "mean_overshoot_m": 15.528082926792344,
+      "mean_undershoot_m": -17.15995740234101,
+      "overshoot_fraction": 0.33611111111111114,
+      "mean_speed_error_m_s": -0.0015432859618177974,
+      "mean_speed_minus_local_R_m_s": 0.0007205267889350391,
+      "high_R_mean_displacement_m": -0.6282825379783641,
+      "low_R_mean_displacement_m": -7.940187561221652,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.10653034441141206,
+        "rms_radius_m": 42.58790937165563
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.00761936302661869,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1056000.0
+      ],
+      "largest_component_m2": 1056000.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 51.81774673054906,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": 6.812284778908349,
+    "correct_sign": true,
+    "name": "F1",
+    "seed": 1,
+    "train_seconds": 37.59562360000564,
+    "sampling": "uniform",
+    "eikonal_weight": 0.0,
+    "retrained": true
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9421985815602837,
+    "final_symmetric_m": 17.893090623799008,
+    "final_p95_m": 39.32608364010291,
+    "final_area_error_km2": 0.02839999999999998,
+    "volume_residual_m_s": 0.011775027960538864,
+    "predicted_front_residual_m_s": 0.017841529101133347,
+    "numerical_front_residual_m_s": 0.017144162207841873,
+    "pinn_growth": {
+      "high_r_growth_m": 223.89602308613058,
+      "low_r_growth_m": 184.95845575108498
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9628985507246377,
+        "symmetric_distance_m": 8.780621505936338,
+        "p95_distance_m": 24.173977315057016,
+        "area_error_km2": 0.0031999999999999806,
+        "pred_area_km2": 0.6788,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9441241685144124,
+        "symmetric_distance_m": 15.090896914476398,
+        "p95_distance_m": 33.64873043294344,
+        "area_error_km2": 0.009600000000000053,
+        "pred_area_km2": 0.8816,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9421985815602837,
+        "symmetric_distance_m": 17.893090623799008,
+        "p95_distance_m": 39.32608364010291,
+        "area_error_km2": 0.02839999999999998,
+        "pred_area_km2": 1.1096,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13057,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.0558366775512695,
+        "std_abs_grad": 0.2756713628768921,
+        "p95_abs_grad": 1.5337435007095337,
+        "mean_hessian_per_m": 0.009495746344327927,
+        "p95_hessian_per_m": 0.024924667552113533,
+        "mean_abs_residual_m_s": 0.011824438348412514
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.173626184463501,
+        "std_abs_grad": 0.3585597574710846,
+        "p95_abs_grad": 1.7702841758728027,
+        "mean_hessian_per_m": 0.016224751248955727,
+        "p95_hessian_per_m": 0.031800732016563416,
+        "mean_abs_residual_m_s": 0.017841529101133347
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 8.775204571040033,
+      "mean_overshoot_m": 21.493223167731152,
+      "mean_undershoot_m": -13.725905253875027,
+      "overshoot_fraction": 0.6388888888888888,
+      "mean_speed_error_m_s": 0.0021938011427600082,
+      "mean_speed_minus_local_R_m_s": 0.004457613893512845,
+      "high_R_mean_displacement_m": 6.336894708410674,
+      "low_R_mean_displacement_m": 9.552248373416424,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.13003928588905578,
+        "rms_radius_m": 35.97182129935544
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.009322917267634994,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1109600.0
+      ],
+      "largest_component_m2": 1109600.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 38.9375673350456,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": -6.067894616595112,
+    "correct_sign": true,
+    "name": "F1",
+    "seed": 2,
+    "train_seconds": 39.810192200005986,
+    "sampling": "uniform",
+    "eikonal_weight": 0.0,
+    "retrained": true
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9551236749116607,
+    "final_symmetric_m": 14.18742549167347,
+    "final_p95_m": 31.05092336541442,
+    "final_area_error_km2": 0.050799999999999956,
+    "volume_residual_m_s": 0.009399887174367905,
+    "predicted_front_residual_m_s": 0.006828428711742163,
+    "numerical_front_residual_m_s": 0.00665262108668685,
+    "pinn_growth": {
+      "high_r_growth_m": 235.60032325085606,
+      "low_r_growth_m": 188.78613190743394
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9762180974477959,
+        "symmetric_distance_m": 5.08995181818128,
+        "p95_distance_m": 12.580367107780395,
+        "area_error_km2": 0.011600000000000055,
+        "pred_area_km2": 0.6872,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.96155545735749,
+        "symmetric_distance_m": 10.498287901700737,
+        "p95_distance_m": 22.71691682096028,
+        "area_error_km2": 0.03159999999999996,
+        "pred_area_km2": 0.9036,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9551236749116607,
+        "symmetric_distance_m": 14.18742549167347,
+        "p95_distance_m": 31.05092336541442,
+        "area_error_km2": 0.050799999999999956,
+        "pred_area_km2": 1.132,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13057,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.026975154876709,
+        "std_abs_grad": 0.193649560213089,
+        "p95_abs_grad": 1.367635726928711,
+        "mean_hessian_per_m": 0.006175623275339603,
+        "p95_hessian_per_m": 0.014632755890488625,
+        "mean_abs_residual_m_s": 0.009128880687057972
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.1158384084701538,
+        "std_abs_grad": 0.20031629502773285,
+        "p95_abs_grad": 1.4221640825271606,
+        "mean_hessian_per_m": 0.006198232527822256,
+        "p95_hessian_per_m": 0.01167928334325552,
+        "mean_abs_residual_m_s": 0.006828428711742163
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 14.335792388429452,
+      "mean_overshoot_m": 14.9381845065301,
+      "mean_undershoot_m": -3.133579036489351,
+      "overshoot_fraction": 0.9666666666666667,
+      "mean_speed_error_m_s": 0.0035839480971073634,
+      "mean_speed_minus_local_R_m_s": 0.0058477608478602,
+      "high_R_mean_displacement_m": 17.63851423289937,
+      "low_R_mean_displacement_m": 13.283276635796177,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.029165299633307808,
+        "rms_radius_m": 38.03333213134919
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.004223895133097397,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1132000.0
+      ],
+      "largest_component_m2": 1132000.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 46.814191343422124,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": 1.8087293917814122,
+    "correct_sign": true,
+    "name": "F1G",
+    "seed": 0,
+    "train_seconds": 36.094899100018665,
+    "sampling": "front",
+    "eikonal_weight": 0.0,
+    "retrained": true
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9558450959102425,
+    "final_symmetric_m": 13.58291001623213,
+    "final_p95_m": 29.1807562407071,
+    "final_area_error_km2": -0.0007999999999999119,
+    "volume_residual_m_s": 0.011541311629116535,
+    "predicted_front_residual_m_s": 0.012236305512487888,
+    "numerical_front_residual_m_s": 0.011817379854619503,
+    "pinn_growth": {
+      "high_r_growth_m": 213.04479993290872,
+      "low_r_growth_m": 176.87607251649334
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9646171693735499,
+        "symmetric_distance_m": 8.31517841561882,
+        "p95_distance_m": 19.65780850948079,
+        "area_error_km2": 0.0036000000000000476,
+        "pred_area_km2": 0.6792,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9576271186440678,
+        "symmetric_distance_m": 11.223906919483115,
+        "p95_distance_m": 22.499160434824663,
+        "area_error_km2": 0.011600000000000055,
+        "pred_area_km2": 0.8836,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9558450959102425,
+        "symmetric_distance_m": 13.58291001623213,
+        "p95_distance_m": 29.1807562407071,
+        "area_error_km2": -0.0007999999999999119,
+        "pred_area_km2": 1.0804,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13057,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.0342364311218262,
+        "std_abs_grad": 0.2263781875371933,
+        "p95_abs_grad": 1.4121894836425781,
+        "mean_hessian_per_m": 0.006521350238472223,
+        "p95_hessian_per_m": 0.015421856194734573,
+        "mean_abs_residual_m_s": 0.011558661237359047
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.0212329626083374,
+        "std_abs_grad": 0.08161036670207977,
+        "p95_abs_grad": 1.1508228778839111,
+        "mean_hessian_per_m": 0.00484108179807663,
+        "p95_hessian_per_m": 0.010311486199498177,
+        "mean_abs_residual_m_s": 0.012236305512487888
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 1.3308830849409692,
+      "mean_overshoot_m": 15.125082515205515,
+      "mean_undershoot_m": -12.930916326010509,
+      "overshoot_fraction": 0.5083333333333333,
+      "mean_speed_error_m_s": 0.0003327207712352423,
+      "mean_speed_minus_local_R_m_s": 0.002596533521988079,
+      "high_R_mean_displacement_m": -5.969644774428458,
+      "low_R_mean_displacement_m": 3.6574249302345234,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.05555511096528765,
+        "rms_radius_m": 27.20515616459205
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.004321717795003569,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1080400.0
+      ],
+      "largest_component_m2": 1080400.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 36.16872741641538,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": -8.836734535225332,
+    "correct_sign": true,
+    "name": "F1H1em02",
+    "seed": 0,
+    "train_seconds": 54.73973890001071,
+    "sampling": "uniform",
+    "eikonal_weight": 0.01,
+    "retrained": true
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9478505990133897,
+    "final_symmetric_m": 16.510598728145354,
+    "final_p95_m": 33.726595010748646,
+    "final_area_error_km2": 0.048799999999999955,
+    "volume_residual_m_s": 0.007873183116316795,
+    "predicted_front_residual_m_s": 0.009486839175224304,
+    "numerical_front_residual_m_s": 0.009109338745474815,
+    "pinn_growth": {
+      "high_r_growth_m": 227.81143877705153,
+      "low_r_growth_m": 189.79376767421775
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9693995381062356,
+        "symmetric_distance_m": 6.725785240717421,
+        "p95_distance_m": 17.0599011442504,
+        "area_error_km2": 0.01319999999999999,
+        "pred_area_km2": 0.6888,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9534065934065934,
+        "symmetric_distance_m": 13.129025063053593,
+        "p95_distance_m": 27.481788596922982,
+        "area_error_km2": 0.03359999999999996,
+        "pred_area_km2": 0.9056,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9478505990133897,
+        "symmetric_distance_m": 16.510598728145354,
+        "p95_distance_m": 33.726595010748646,
+        "area_error_km2": 0.048799999999999955,
+        "pred_area_km2": 1.13,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13057,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.0189570188522339,
+        "std_abs_grad": 0.17238180339336395,
+        "p95_abs_grad": 1.3121386766433716,
+        "mean_hessian_per_m": 0.005069653037935495,
+        "p95_hessian_per_m": 0.011935552582144737,
+        "mean_abs_residual_m_s": 0.00785699114203453
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.0583444833755493,
+        "std_abs_grad": 0.13532134890556335,
+        "p95_abs_grad": 1.2737319469451904,
+        "mean_hessian_per_m": 0.005513255018740892,
+        "p95_hessian_per_m": 0.011015545576810837,
+        "mean_abs_residual_m_s": 0.009486839175224304
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 14.13399154820174,
+      "mean_overshoot_m": 20.540558486764684,
+      "mean_undershoot_m": -5.969373672806115,
+      "overshoot_fraction": 0.7583333333333333,
+      "mean_speed_error_m_s": 0.0035334978870504353,
+      "mean_speed_minus_local_R_m_s": 0.005797310637803272,
+      "high_R_mean_displacement_m": 8.917545513319835,
+      "low_R_mean_displacement_m": 15.796375449427842,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.03912740205928626,
+        "rms_radius_m": 29.427236767001407
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.004324523176373116,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1130000.0
+      ],
+      "largest_component_m2": 1130000.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 38.01767110283379,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": -6.987790848806924,
+    "correct_sign": true,
+    "name": "F1H1em03",
+    "seed": 0,
+    "train_seconds": 51.49766560000717,
+    "sampling": "uniform",
+    "eikonal_weight": 0.001,
+    "retrained": true
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9380281690140845,
+    "final_symmetric_m": 17.92787302097156,
+    "final_p95_m": 55.383605688654114,
+    "final_area_error_km2": 0.039200000000000124,
+    "volume_residual_m_s": 0.012224730104207993,
+    "predicted_front_residual_m_s": 0.017991047352552414,
+    "numerical_front_residual_m_s": 0.017677024006843567,
+    "pinn_growth": {
+      "high_r_growth_m": 243.67954735332412,
+      "low_r_growth_m": 181.4927868700761
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9665706051873199,
+        "symmetric_distance_m": 8.809917758884545,
+        "p95_distance_m": 21.653467639848685,
+        "area_error_km2": 0.013600000000000056,
+        "pred_area_km2": 0.6892,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9570469798657718,
+        "symmetric_distance_m": 11.626466782262254,
+        "p95_distance_m": 28.539824353491454,
+        "area_error_km2": 0.005600000000000049,
+        "pred_area_km2": 0.8776,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9380281690140845,
+        "symmetric_distance_m": 17.92787302097156,
+        "p95_distance_m": 55.383605688654114,
+        "area_error_km2": 0.039200000000000124,
+        "pred_area_km2": 1.1204,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13313,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.0547665357589722,
+        "std_abs_grad": 0.2815472185611725,
+        "p95_abs_grad": 1.5516122579574585,
+        "mean_hessian_per_m": 0.00974828191101551,
+        "p95_hessian_per_m": 0.0241832472383976,
+        "mean_abs_residual_m_s": 0.01241796463727951
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.2510625123977661,
+        "std_abs_grad": 0.4007554054260254,
+        "p95_abs_grad": 1.9807591438293457,
+        "mean_hessian_per_m": 0.017254231497645378,
+        "p95_hessian_per_m": 0.03652220964431763,
+        "mean_abs_residual_m_s": 0.017991047352552414
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 10.106521709840154,
+      "mean_overshoot_m": 22.670562076815923,
+      "mean_undershoot_m": -12.12216509327083,
+      "overshoot_fraction": 0.6388888888888888,
+      "mean_speed_error_m_s": 0.0025266304274600385,
+      "mean_speed_minus_local_R_m_s": 0.004790443178212874,
+      "high_R_mean_displacement_m": 23.942874738035286,
+      "low_R_mean_displacement_m": 5.69713448107467,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.17211155204824022,
+        "rms_radius_m": 48.42008998172352
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.018906803326169654,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1120400.0
+      ],
+      "largest_component_m2": 1120400.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 62.18676048324804,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": 17.181298531607325,
+    "correct_sign": true,
+    "name": "F2",
+    "seed": 0,
+    "train_seconds": 46.96356169998762,
+    "sampling": "uniform",
+    "eikonal_weight": 0.0,
+    "retrained": true
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9200556134862704,
+    "final_symmetric_m": 21.714324083391084,
+    "final_p95_m": 64.51661358535497,
+    "final_area_error_km2": 0.04720000000000013,
+    "volume_residual_m_s": 0.01602894626557827,
+    "predicted_front_residual_m_s": 0.023267190903425217,
+    "numerical_front_residual_m_s": 0.02252998575568199,
+    "pinn_growth": {
+      "high_r_growth_m": 246.2689507263779,
+      "low_r_growth_m": 187.37538739892042
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.9642445213379469,
+        "symmetric_distance_m": 8.411205751462356,
+        "p95_distance_m": 21.208621992160733,
+        "area_error_km2": 0.011199999999999988,
+        "pred_area_km2": 0.6868,
+        "ref_area_km2": 0.6756,
+        "burned_components": 2,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9513175524787851,
+        "symmetric_distance_m": 12.70506605951512,
+        "p95_distance_m": 26.74359025697078,
+        "area_error_km2": 0.0036000000000000476,
+        "pred_area_km2": 0.8756,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9200556134862704,
+        "symmetric_distance_m": 21.714324083391084,
+        "p95_distance_m": 64.51661358535497,
+        "area_error_km2": 0.04720000000000013,
+        "pred_area_km2": 1.1284,
+        "ref_area_km2": 1.0812,
+        "burned_components": 2,
+        "n_contours": 2,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13825,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.1208723783493042,
+        "std_abs_grad": 0.40790802240371704,
+        "p95_abs_grad": 1.8652527332305908,
+        "mean_hessian_per_m": 0.02547510340809822,
+        "p95_hessian_per_m": 0.06142936646938324,
+        "mean_abs_residual_m_s": 0.01579260267317295
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.3798596858978271,
+        "std_abs_grad": 0.6600604057312012,
+        "p95_abs_grad": 2.467567205429077,
+        "mean_hessian_per_m": 0.05010271817445755,
+        "p95_hessian_per_m": 0.11216560006141663,
+        "mean_abs_residual_m_s": 0.023267190903425217
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 13.404820371335285,
+      "mean_overshoot_m": 31.292888314340583,
+      "mean_undershoot_m": -12.514625015468301,
+      "overshoot_fraction": 0.5916666666666667,
+      "mean_speed_error_m_s": 0.0033512050928338226,
+      "mean_speed_minus_local_R_m_s": 0.005615017843586659,
+      "high_R_mean_displacement_m": 28.45266041071287,
+      "low_R_mean_displacement_m": 8.609354864280894,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.1651584004007696,
+        "rms_radius_m": 49.143655235861
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.025444112686695806,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 2,
+      "component_areas_m2": [
+        1126800.0,
+        1600.0
+      ],
+      "largest_component_m2": 1126800.0,
+      "other_components_m2": 1600.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 58.893563327457485,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": 13.888101375816774,
+    "correct_sign": true,
+    "name": "F3",
+    "seed": 0,
+    "train_seconds": 43.0,
+    "retrained": false,
+    "label": "saved Fourier seed 0"
+  },
+  {
+    "initial_iou": 1.0,
+    "final_iou": 0.9105858170606372,
+    "final_symmetric_m": 24.999157065866505,
+    "final_p95_m": 82.0882689011149,
+    "final_area_error_km2": 0.06840000000000002,
+    "volume_residual_m_s": 0.015251046046614647,
+    "predicted_front_residual_m_s": 0.024627678096294403,
+    "numerical_front_residual_m_s": 0.02447529509663582,
+    "pinn_growth": {
+      "high_r_growth_m": 265.6234606840012,
+      "low_r_growth_m": 189.92221068762598
+    },
+    "numerical_growth": {
+      "high_r_growth_m": 220.39511168217888,
+      "low_r_growth_m": 175.38964973053817
+    },
+    "times": [
+      {
+        "iou": 1.0,
+        "symmetric_distance_m": 1.226842892699653e-05,
+        "p95_distance_m": 3.126734182720754e-05,
+        "area_error_km2": 0.0,
+        "pred_area_km2": 0.5008,
+        "ref_area_km2": 0.5008,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 0.0
+      },
+      {
+        "iou": 0.960955710955711,
+        "symmetric_distance_m": 9.931067339172165,
+        "p95_distance_m": 23.3609476987681,
+        "area_error_km2": -0.005199999999999982,
+        "pred_area_km2": 0.6704,
+        "ref_area_km2": 0.6756,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 1333.3333333333333
+      },
+      {
+        "iou": 0.9421450823319982,
+        "symmetric_distance_m": 14.352857067097506,
+        "p95_distance_m": 38.80097906617307,
+        "area_error_km2": 0.0016000000000000458,
+        "pred_area_km2": 0.8736,
+        "ref_area_km2": 0.872,
+        "burned_components": 1,
+        "n_contours": 1,
+        "t_s": 2666.6666666666665
+      },
+      {
+        "iou": 0.9105858170606372,
+        "symmetric_distance_m": 24.999157065866505,
+        "p95_distance_m": 82.0882689011149,
+        "area_error_km2": 0.06840000000000002,
+        "pred_area_km2": 1.1496,
+        "ref_area_km2": 1.0812,
+        "burned_components": 1,
+        "n_contours": 2,
+        "t_s": 4000.0
+      }
+    ],
+    "parameter_count": 13313,
+    "gradient_stats": {
+      "volume": {
+        "mean_abs_grad": 1.097261667251587,
+        "std_abs_grad": 0.37338966131210327,
+        "p95_abs_grad": 1.7969578504562378,
+        "mean_hessian_per_m": 0.01594514213502407,
+        "p95_hessian_per_m": 0.0404120497405529,
+        "mean_abs_residual_m_s": 0.01542048528790474
+      },
+      "predicted_front": {
+        "mean_abs_grad": 1.2907317876815796,
+        "std_abs_grad": 0.5485787391662598,
+        "p95_abs_grad": 2.2556326389312744,
+        "mean_hessian_per_m": 0.02785539999604225,
+        "p95_hessian_per_m": 0.05710360407829285,
+        "mean_abs_residual_m_s": 0.024627678096294403
+      }
+    },
+    "roughness": {
+      "available": true,
+      "mean_signed_displacement_m": 17.251515028865317,
+      "mean_overshoot_m": 35.5332805296302,
+      "mean_undershoot_m": -12.506395238803073,
+      "overshoot_fraction": 0.6194444444444445,
+      "mean_speed_error_m_s": 0.004312878757216329,
+      "mean_speed_minus_local_R_m_s": 0.006576691507969167,
+      "high_R_mean_displacement_m": 46.636827661600975,
+      "low_R_mean_displacement_m": 7.886964849202305,
+      "predicted_spectrum": {
+        "high_frequency_fraction": 0.1588013141367632,
+        "rms_radius_m": 54.53686349877053
+      },
+      "reference_spectrum": {
+        "high_frequency_fraction": 0.0011722063363664708,
+        "rms_radius_m": 38.199865977425674
+      },
+      "predicted_curvature_rms_per_m": 0.025749486851807397,
+      "reference_curvature_rms_per_m": 0.0019105640287465087
+    },
+    "components": {
+      "burned_components": 1,
+      "component_areas_m2": [
+        1149600.0
+      ],
+      "largest_component_m2": 1149600.0,
+      "other_components_m2": 0.0
+    },
+    "numerical_field_hessian": {
+      "mean_hessian_per_m": 0.0015081984352849575,
+      "count": 1668
+    },
+    "growth_gap_m": 75.70124999637522,
+    "reference_gap_m": 45.00546195164071,
+    "gap_error_m": 30.695788044734513,
+    "correct_sign": true,
+    "name": "F4",
+    "seed": 0,
+    "train_seconds": 33.517413299996406,
+    "sampling": "uniform",
+    "eikonal_weight": 0.0,
+    "retrained": true
+  }
+]

@@ -1,0 +1,57 @@
+{
+  "volume_derivatives": {
+    "mean_abs_grad": 1.1208723783493042,
+    "std_abs_grad": 0.40790802240371704,
+    "p95_abs_grad": 1.8652527332305908,
+    "mean_hessian_per_m": 0.02547510340809822,
+    "p95_hessian_per_m": 0.06142936646938324,
+    "mean_abs_residual_m_s": 0.01579260267317295
+  },
+  "predicted_front_derivatives": {
+    "mean_abs_grad": 1.3798596858978271,
+    "std_abs_grad": 0.6600604057312012,
+    "p95_abs_grad": 2.467567205429077,
+    "mean_hessian_per_m": 0.05010271817445755,
+    "p95_hessian_per_m": 0.11216560006141663,
+    "mean_abs_residual_m_s": 0.023267190903425217
+  },
+  "numerical_front_residual_m_s": 0.02252998575568199,
+  "predicted_front_residual_m_s": 0.023267190903425217,
+  "roughness": {
+    "available": true,
+    "mean_signed_displacement_m": 13.404820371335285,
+    "mean_overshoot_m": 31.292888314340583,
+    "mean_undershoot_m": -12.514625015468301,
+    "overshoot_fraction": 0.5916666666666667,
+    "mean_speed_error_m_s": 0.0033512050928338226,
+    "mean_speed_minus_local_R_m_s": 0.005615017843586659,
+    "high_R_mean_displacement_m": 28.45266041071287,
+    "low_R_mean_displacement_m": 8.609354864280894,
+    "predicted_spectrum": {
+      "high_frequency_fraction": 0.1651584004007696,
+      "rms_radius_m": 49.143655235861
+    },
+    "reference_spectrum": {
+      "high_frequency_fraction": 0.0011722063363664708,
+      "rms_radius_m": 38.199865977425674
+    },
+    "predicted_curvature_rms_per_m": 0.025444112686695806,
+    "reference_curvature_rms_per_m": 0.0019105640287465087
+  },
+  "components": {
+    "burned_components": 2,
+    "component_areas_m2": [
+      1126800.0,
+      1600.0
+    ],
+    "largest_component_m2": 1126800.0,
+    "other_components_m2": 1600.0
+  },
+  "numerical_field_hessian": {
+    "mean_hessian_per_m": 0.0015081984352849575,
+    "count": 1668
+  },
+  "gap_error_m": 13.888101375816774,
+  "final_symmetric_m": 21.714324083391084,
+  "final_iou": 0.9200556134862704
+}

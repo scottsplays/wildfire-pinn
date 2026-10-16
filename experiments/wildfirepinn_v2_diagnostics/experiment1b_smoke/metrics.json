@@ -1,0 +1,320 @@
+[
+  {
+    "r_m_s": 0.0,
+    "kind": "hard_ic",
+    "train_seconds": 0.07277749999775551,
+    "final_train_pde_loss": 0.02531290240585804,
+    "initial_iou": 1.0,
+    "final_iou": 0.0,
+    "initial_radius_error_m": -0.007507134007141758,
+    "final_radius_error_m": null,
+    "initial_radial_miss_m": 0.007507134007164385,
+    "final_radial_miss_m": null,
+    "ic_rmse_m": 8.224277579403381e-05,
+    "pde_residual_m_s": 0.3652282655239105,
+    "front_residual_m_s": 0.447470486164093,
+    "front_grad_magnitude": 0.9676730036735535,
+    "inferred_speed_m_s": null,
+    "speed_error_m_s": null,
+    "numerical_final_iou": 1.0,
+    "numerical_final_radius_error_m": -0.007511639395204384,
+    "times": [
+      {
+        "t_s": 0.0,
+        "true_radius_m": 400.0,
+        "pinn": {
+          "contour": true,
+          "radius_m": 399.99249286599286,
+          "radius_error_m": -0.007507134007141758,
+          "mean_radial_displacement_m": 0.007507134007164385,
+          "n_vertices": 309,
+          "iou": 1.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 399.9924883606048,
+          "radius_error_m": -0.007511639395204384,
+          "mean_radial_displacement_m": 0.007511639395177158,
+          "n_vertices": 309,
+          "iou": 1.0
+        }
+      },
+      {
+        "t_s": 1333.3333333333333,
+        "true_radius_m": 400.0,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 399.9924883606048,
+          "radius_error_m": -0.007511639395204384,
+          "mean_radial_displacement_m": 0.007511639395177158,
+          "n_vertices": 309,
+          "iou": 1.0
+        }
+      },
+      {
+        "t_s": 2666.6666666666665,
+        "true_radius_m": 400.0,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 399.9924883606048,
+          "radius_error_m": -0.007511639395204384,
+          "mean_radial_displacement_m": 0.007511639395177158,
+          "n_vertices": 309,
+          "iou": 1.0
+        }
+      },
+      {
+        "t_s": 4000.0,
+        "true_radius_m": 400.0,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 399.9924883606048,
+          "radius_error_m": -0.007511639395204384,
+          "mean_radial_displacement_m": 0.007511639395177158,
+          "n_vertices": 309,
+          "iou": 1.0
+        }
+      }
+    ],
+    "config": "B",
+    "label": "hard IC, uniform PDE",
+    "oracle_front_sampling": false,
+    "retrained": true
+  },
+  {
+    "r_m_s": 0.01,
+    "kind": "hard_ic",
+    "train_seconds": 0.08881950000068173,
+    "final_train_pde_loss": 0.025543900206685066,
+    "initial_iou": 1.0,
+    "final_iou": 0.0,
+    "initial_radius_error_m": -0.007507134007141758,
+    "final_radius_error_m": null,
+    "initial_radial_miss_m": 0.007507134007164385,
+    "final_radial_miss_m": null,
+    "ic_rmse_m": 8.224277579403381e-05,
+    "pde_residual_m_s": 0.3675006628036499,
+    "front_residual_m_s": 0.4488382041454315,
+    "front_grad_magnitude": 0.9648301005363464,
+    "inferred_speed_m_s": null,
+    "speed_error_m_s": null,
+    "numerical_final_iou": 0.9993417804837913,
+    "numerical_final_radius_error_m": -0.2157061761395198,
+    "times": [
+      {
+        "t_s": 0.0,
+        "true_radius_m": 400.0,
+        "pinn": {
+          "contour": true,
+          "radius_m": 399.99249286599286,
+          "radius_error_m": -0.007507134007141758,
+          "mean_radial_displacement_m": 0.007507134007164385,
+          "n_vertices": 309,
+          "iou": 1.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 399.9924883606048,
+          "radius_error_m": -0.007511639395204384,
+          "mean_radial_displacement_m": 0.007511639395177158,
+          "n_vertices": 309,
+          "iou": 1.0
+        }
+      },
+      {
+        "t_s": 1333.3333333333333,
+        "true_radius_m": 413.3333333333333,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 413.25267565745133,
+          "radius_error_m": -0.08065767588198014,
+          "mean_radial_displacement_m": 0.08065767588196546,
+          "n_vertices": 333,
+          "iou": 1.0
+        }
+      },
+      {
+        "t_s": 2666.6666666666665,
+        "true_radius_m": 426.6666666666667,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 426.51480909547803,
+          "radius_error_m": -0.15185757118865695,
+          "mean_radial_displacement_m": 0.15185757118866378,
+          "n_vertices": 341,
+          "iou": 1.0
+        }
+      },
+      {
+        "t_s": 4000.0,
+        "true_radius_m": 440.0,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 439.7842938238605,
+          "radius_error_m": -0.2157061761395198,
+          "mean_radial_displacement_m": 0.21570617613946153,
+          "n_vertices": 357,
+          "iou": 0.9993417804837913
+        }
+      }
+    ],
+    "config": "B",
+    "label": "hard IC, uniform PDE",
+    "oracle_front_sampling": false,
+    "retrained": true
+  },
+  {
+    "r_m_s": 0.1,
+    "kind": "hard_ic",
+    "train_seconds": 0.07741050000186078,
+    "final_train_pde_loss": 0.03700369969010353,
+    "initial_iou": 1.0,
+    "final_iou": 0.0,
+    "initial_radius_error_m": -0.007507134007141758,
+    "final_radius_error_m": null,
+    "initial_radial_miss_m": 0.007507134007164385,
+    "final_radial_miss_m": null,
+    "ic_rmse_m": 8.224277579403381e-05,
+    "pde_residual_m_s": 0.3728439509868622,
+    "front_residual_m_s": 0.4398749768733978,
+    "front_grad_magnitude": 0.9483281970024109,
+    "inferred_speed_m_s": null,
+    "speed_error_m_s": null,
+    "numerical_final_iou": 0.9972096267875828,
+    "numerical_final_radius_error_m": -1.5706586795083695,
+    "times": [
+      {
+        "t_s": 0.0,
+        "true_radius_m": 400.0,
+        "pinn": {
+          "contour": true,
+          "radius_m": 399.99249286599286,
+          "radius_error_m": -0.007507134007141758,
+          "mean_radial_displacement_m": 0.007507134007164385,
+          "n_vertices": 309,
+          "iou": 1.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 399.9924883606048,
+          "radius_error_m": -0.007511639395204384,
+          "mean_radial_displacement_m": 0.007511639395177158,
+          "n_vertices": 309,
+          "iou": 1.0
+        }
+      },
+      {
+        "t_s": 1333.3333333333333,
+        "true_radius_m": 533.3333333333334,
+        "pinn": {
+          "contour": true,
+          "radius_m": 86.69920745118998,
+          "radius_error_m": -446.6341258821434,
+          "mean_radial_displacement_m": 446.63412588214334,
+          "n_vertices": 71,
+          "iou": 0.025936277249860258
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 532.6850053230947,
+          "radius_error_m": -0.6483280102386288,
+          "mean_radial_displacement_m": 0.648328010238613,
+          "n_vertices": 429,
+          "iou": 0.9973169368362214
+        }
+      },
+      {
+        "t_s": 2666.6666666666665,
+        "true_radius_m": 666.6666666666667,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 665.5124433131958,
+          "radius_error_m": -1.1542233534709112,
+          "mean_radial_displacement_m": 1.1542233534708757,
+          "n_vertices": 533,
+          "iou": 0.99656283566058
+        }
+      },
+      {
+        "t_s": 4000.0,
+        "true_radius_m": 800.0,
+        "pinn": {
+          "contour": false,
+          "radius_m": null,
+          "radius_error_m": null,
+          "mean_radial_displacement_m": null,
+          "n_vertices": 0,
+          "iou": 0.0
+        },
+        "numerical": {
+          "contour": true,
+          "radius_m": 798.4293413204916,
+          "radius_error_m": -1.5706586795083695,
+          "mean_radial_displacement_m": 1.570658679508551,
+          "n_vertices": 637,
+          "iou": 0.9972096267875828
+        }
+      }
+    ],
+    "config": "B",
+    "label": "hard IC, uniform PDE",
+    "oracle_front_sampling": false,
+    "retrained": true
+  }
+]

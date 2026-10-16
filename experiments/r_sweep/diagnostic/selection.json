@@ -1,0 +1,41 @@
+{
+  "rule": "max validation IoU among configs with contours on every validation pass; then lower area MAE; then lower symmetric distance. Test is not used.",
+  "ranking": [
+    {
+      "mode": "constant",
+      "r_m_s": 0.01,
+      "r_scale": NaN,
+      "val_iou": 0.49324037622045697,
+      "val_area_mae_km2": 22.30942499999999,
+      "val_contour_fraction": 1.0,
+      "val_sym_dist_m": 1826.2755534957853
+    },
+    {
+      "mode": "control",
+      "r_m_s": 0.0,
+      "r_scale": NaN,
+      "val_iou": 0.41634918774472907,
+      "val_area_mae_km2": 141.57382499999997,
+      "val_contour_fraction": 1.0,
+      "val_sym_dist_m": 2255.1050177799643
+    },
+    {
+      "mode": "constant",
+      "r_m_s": 0.0,
+      "r_scale": NaN,
+      "val_iou": 0.3880986690462104,
+      "val_area_mae_km2": 134.67465,
+      "val_contour_fraction": 1.0,
+      "val_sym_dist_m": 1670.272908094053
+    },
+    {
+      "mode": "constant",
+      "r_m_s": 0.1,
+      "r_scale": NaN,
+      "val_iou": 0.2734238481201405,
+      "val_area_mae_km2": 467.149275,
+      "val_contour_fraction": 1.0,
+      "val_sym_dist_m": 4990.714217868846
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+# Runtime packages for the research API.
+# Install the CPU PyTorch wheel first. The CUDA wheel is not used.
+#
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r deployment/wildfirepinn_api/requirements.txt
+
+# Pinned to the versions that passed the local API tests.
+# Install the CPU torch wheel first, from the CPU index, not from PyPI:
+#   pip install torch==2.12.1 --index-url https://download.pytorch.org/whl/cpu
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.16.2
+shapely==2.1.2
+scikit-image==0.26.0
+matplotlib==3.10.7
+fastapi==0.139.0
+uvicorn==0.49.0
+httpx==0.28.1
+pydantic==2.10.3

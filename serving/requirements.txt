@@ -1,0 +1,23 @@
+# Runtime packages for the inference container.
+# Install the CPU PyTorch wheel first. The CUDA wheel is not used.
+#
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   pip install -r serving/requirements.txt
+#
+# A workstation that already has a CPU torch build can install this file alone.
+
+numpy>=1.26
+pandas>=2.0
+xarray>=2024.1
+netCDF4>=1.6
+h5netcdf>=1.3
+scipy>=1.11
+shapely>=2.0
+pyproj>=3.5
+pyogrio>=0.7
+geopandas>=1.0
+requests>=2.31
+fastapi>=0.110
+uvicorn>=0.27
+google-auth>=2.27
+httpx>=0.27

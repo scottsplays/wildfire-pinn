@@ -1,0 +1,11 @@
+{
+  "t_over_l_s_per_m": 9.779271708683474,
+  "example_physical_residual_m_s": 0.09956427625130339,
+  "example_coded_over_t_over_l_m_s": 0.0995642784556099,
+  "flat_gradient_coded_residual": 4.8896362159212e-07,
+  "gradient_floor": "directed_residual uses sqrt(phi_x^2+phi_y^2+1e-12), so a zero gradient does not divide by zero",
+  "pde_sample_region": "uniform in the model bounding box and in tau from 0 to 1, matching train_real",
+  "wind": "R_eff = clip(R * (1 + 0.6 * alignment), min=0). Listed R values are the pre-wind rate.",
+  "weather_r_median_m_s": 0.03440430387854576,
+  "weather_r_mean_m_s": 0.06816123195923031
+}

@@ -1,0 +1,30 @@
+{
+  "grid_n": 201,
+  "train_times_s": [0, 1000, 2000],
+  "forecast_times_s": [3000, 4000],
+  "dense_times_s": [0, 500, 1000, 1500, 2000],
+  "sparse_times_s": [0, 2000],
+  "r_min_m_s": 0.005,
+  "r_max_m_s": 0.15,
+  "amplitude_max": 0.9,
+  "diagnostic_wavelength_m": 1500,
+  "cfl": 0.4,
+  "mlp_hidden": 32,
+  "mlp_layers": 2,
+  "mlp_epochs": 30,
+  "mlp_lr": 0.05,
+  "grad_clip": 5.0,
+  "loss_length_m": 50.0,
+  "nelder_mead_maxfev": 50,
+  "ray_bins": 180,
+  "perturbation_m": [20, 40],
+  "perturbation_harmonic": 3,
+  "perturbation_phase": 0.3,
+  "second_ignition_m": [-400, 300],
+  "seeds": [0, 1, 2],
+  "fourier_starts": [
+    [null, 0.0],
+    [0.02, 0.3],
+    [0.10, -0.3]
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "$defs": {
+    "GridSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "x_min_m": {
+          "title": "X Min M",
+          "type": "number"
+        },
+        "x_max_m": {
+          "title": "X Max M",
+          "type": "number"
+        },
+        "y_min_m": {
+          "title": "Y Min M",
+          "type": "number"
+        },
+        "y_max_m": {
+          "title": "Y Max M",
+          "type": "number"
+        },
+        "resolution_m": {
+          "maximum": 200.0,
+          "minimum": 10.0,
+          "title": "Resolution M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "x_min_m",
+        "x_max_m",
+        "y_min_m",
+        "y_max_m",
+        "resolution_m"
+      ],
+      "title": "GridSpec",
+      "type": "object"
+    },
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "time_s": {
+          "minimum": 0.0,
+          "title": "Time S",
+          "type": "number"
+        },
+        "perimeter": {
+          "$ref": "#/$defs/PolygonGeometry"
+        }
+      },
+      "required": [
+        "time_s",
+        "perimeter"
+      ],
+      "title": "Observation",
+      "type": "object"
+    },
+    "PolygonGeometry": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "Polygon",
+          "title": "Type",
+          "type": "string"
+        },
+        "coordinates": {
+          "items": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "title": "Coordinates",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "coordinates"
+      ],
+      "title": "PolygonGeometry",
+      "type": "object"
+    },
+    "RateParameters": {
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "enum": [
+            "constant",
+            "sin_kx_cos_ky"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "rate_m_s": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rate M S"
+        },
+        "wavelength_m": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wavelength M"
+        }
+      },
+      "required": [
+        "family"
+      ],
+      "title": "RateParameters",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "model": {
+      "enum": [
+        "constant_rate_solver",
+        "ray_inverse_solver",
+        "fourier_inverse_solver",
+        "direct_pinn_experimental"
+      ],
+      "title": "Model",
+      "type": "string"
+    },
+    "coordinate_system": {
+      "enum": [
+        "local_cartesian_m",
+        "projected_meters"
+      ],
+      "title": "Coordinate System",
+      "type": "string"
+    },
+    "crs": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Crs"
+    },
+    "grid": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GridSpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/Observation"
+      },
+      "title": "Observations",
+      "type": "array"
+    },
+    "forecast_time_s": {
+      "minimum": 0.0,
+      "title": "Forecast Time S",
+      "type": "number"
+    },
+    "rate_parameters": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RateParameters"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "supported_benchmark": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Supported Benchmark"
+    }
+  },
+  "required": [
+    "model",
+    "coordinate_system",
+    "forecast_time_s"
+  ],
+  "title": "ForecastRequest",
+  "type": "object"
+}

@@ -1,0 +1,14 @@
+{
+  "F1": "diagonal modes (f, f) and (f, -f) of sin(kx) cos(ky)",
+  "F2": "F1 plus axis-aligned fundamentals (f, 0) and (0, f)",
+  "F3": "Experiment 2A.2 eight-frequency bank; scored from the saved seed-0 checkpoint",
+  "F4": "axis-aligned fundamental and first harmonic, no diagonals",
+  "sampling_G": {"uniform": 0.5, "predicted_front": 0.4, "steep_R": 0.1, "front_jitter_m": 100, "refresh_epochs": 50},
+  "eikonal": "(|grad phi| - 1)^2 on detached points within 100 m of the predicted front",
+  "epochs": 1500,
+  "seed": 0,
+  "optimizer": "Adam",
+  "learning_rate": 0.001,
+  "hidden": 64,
+  "layers": 4
+}

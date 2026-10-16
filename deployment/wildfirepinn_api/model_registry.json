@@ -1,0 +1,97 @@
+{
+  "default_model": "ray_inverse_solver",
+  "models": {
+    "constant_rate_solver": {
+      "version": "godunov-isotropic-v1",
+      "available": true,
+      "genuine_pde_residual_pinn": false,
+      "physics_constrained_inverse": false,
+      "requires_prescribed_r": false,
+      "infers_r_from_perimeters": true,
+      "appropriate_for_general_forecasting": false,
+      "supported_inputs": [
+        "local_cartesian_m",
+        "projected_meters",
+        "two or more perimeters, or one perimeter plus a positive constant rate_m_s"
+      ],
+      "initialization": "Signed distance of the earliest perimeter. A single speed is the mean radial growth between the first and last observation, unless rate_m_s is prescribed.",
+      "forecast_method": "Isotropic Godunov level-set, phi_t + R |grad phi| = 0, with that one speed everywhere.",
+      "limitations": [
+        "One number cannot represent spatial or directional rate variation.",
+        "The speed is clipped to [0.0001, 0.15] m/s when it is estimated.",
+        "No wind, fuel, or real-fire validation."
+      ]
+    },
+    "ray_inverse_solver": {
+      "version": "experiment3-ray-v1",
+      "available": true,
+      "genuine_pde_residual_pinn": false,
+      "physics_constrained_inverse": true,
+      "requires_prescribed_r": false,
+      "infers_r_from_perimeters": true,
+      "appropriate_for_general_forecasting": false,
+      "supported_inputs": [
+        "local_cartesian_m",
+        "projected_meters",
+        "at least two perimeters",
+        "no prescribed rate family"
+      ],
+      "initialization": "Angular bins around the mean of the earliest contour. Each bin stores the observed radial speed between consecutive perimeters.",
+      "forecast_method": "Paint R(x, y) by interpolating those speeds in radius, extrapolate outside the swept annulus, then advance the isotropic Godunov solver.",
+      "limitations": [
+        "This is a numerical hybrid, not a PINN and not a PDE-residual network.",
+        "R outside the annulus the front has already crossed is copied from the nearest measured radius on that ray.",
+        "The estimate assumes a single front that stays star-shaped around the initial contour mean.",
+        "No wind, fuel, or real-fire validation."
+      ]
+    },
+    "fourier_inverse_solver": {
+      "version": "experiment3-product-nelder-mead-v1",
+      "available": true,
+      "genuine_pde_residual_pinn": false,
+      "physics_constrained_inverse": true,
+      "requires_prescribed_r": true,
+      "infers_r_from_perimeters": true,
+      "appropriate_for_general_forecasting": false,
+      "supported_inputs": [
+        "local_cartesian_m",
+        "projected_meters",
+        "at least two perimeters",
+        "rate_parameters.family = sin_kx_cos_ky",
+        "rate_parameters.wavelength_m = 1500"
+      ],
+      "initialization": "Nelder-Mead on two coefficients of R = r0 * (1 + a * sin(kx) cos(ky)) at the prescribed 1500 m wavelength. Starts are the frozen Experiment 3 list. The kept start is the one with the smaller training-contour error.",
+      "forecast_method": "Isotropic Godunov level-set with the fitted field.",
+      "limitations": [
+        "Specialized research option. The functional family and the wavelength are prescribed, not learned.",
+        "A start at zero amplitude can remain a constant field. The service also tries the frozen nonzero start and keeps the better training fit.",
+        "Do not use this model when the rate family is unknown.",
+        "The held-out forecast is not used to choose the start.",
+        "No wind, fuel, or real-fire validation."
+      ]
+    },
+    "direct_pinn_experimental": {
+      "version": "experiment2a3-f1-seed0",
+      "available": true,
+      "genuine_pde_residual_pinn": true,
+      "physics_constrained_inverse": false,
+      "requires_prescribed_r": true,
+      "infers_r_from_perimeters": false,
+      "appropriate_for_general_forecasting": false,
+      "supported_inputs": [
+        "supported_benchmark = experiment2a3_f1_spatial_product",
+        "local_cartesian_m",
+        "forecast_time_s in [0, 4000]",
+        "no user perimeter"
+      ],
+      "initialization": "Hard initial condition Phi = phi0 / L + tau * g_theta on the analytical circle of radius 400 m centered at (200, -150) m. Domain [-2000, 2000]^2 m, L = 4000 m, T = 4000 s.",
+      "forecast_method": "Evaluate the Experiment 2A.3 F1 seed-0 Fourier PINN. Training used the known product rate inside the level-set residual. Inference does not estimate R.",
+      "limitations": [
+        "Callable only on the benchmark it was trained on.",
+        "Seed 0 met the Experiment 2A.3 numeric targets. Seeds 1 and 2 did not, and they are not served.",
+        "The checkpoint does not accept a new perimeter, a new ignition, or a new rate field.",
+        "Not a real-wildfire model."
+      ]
+    }
+  }
+}

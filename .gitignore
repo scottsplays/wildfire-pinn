@@ -1,0 +1,11 @@
+firms_key.txt
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+data/
+outputs/
+*.nc
+*.tif
+*.tiff
+*.pt

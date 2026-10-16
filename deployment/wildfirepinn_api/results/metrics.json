@@ -1,0 +1,1817 @@
+{
+  "grid_n": 201,
+  "train_times_s": [
+    0.0,
+    1000.0,
+    2000.0
+  ],
+  "forecast_times_s": [
+    3000.0,
+    4000.0
+  ],
+  "selection_rule": "Fourier keeps the Experiment 3 start with the smaller training-contour error. Held-out times are not used to choose it.",
+  "anisotropic": {
+    "status": "unsupported",
+    "reason": "The validated solver advances phi_t + R(x, y) |grad phi| = 0. A normal-dependent rate R(x, y, n) is a different Hamiltonian. directional.py implements a wind-advection split and was not part of the inverse fits. No anisotropic case was run."
+  },
+  "direct_pinn_experimental": {
+    "status": "not_entered_in_the_inverse_comparison",
+    "reason": "The F1 seed-0 checkpoint forecasts only its training circle and does not estimate R. Its benchmark check is the unit test, not these unseen fields."
+  },
+  "runs": [
+    {
+      "model": "constant_rate_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9084536082474227,
+          "symmetric_distance_m": 25.416199464868683,
+          "p95_distance_m": 50.20062522984746,
+          "area_error_km2": 0.0031999999999999806,
+          "pred_area_km2": 0.9272,
+          "ref_area_km2": 0.924,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 143.15269284365405,
+            "low_growth_m": 143.2758544623006,
+            "gap_m": -0.12316161864654873,
+            "threshold_m_s": 0.04858104346881362
+          },
+          "reference_growth": {
+            "high_growth_m": 165.48594476353117,
+            "low_growth_m": 119.5726086718622,
+            "gap_m": 45.91333609166897,
+            "threshold_m_s": 0.04858104346881362
+          },
+          "growth_asymmetry_error_m": -46.036497710315516,
+          "correct_asymmetry_sign": false
+        },
+        "4000": {
+          "iou": 0.8965877437325905,
+          "symmetric_distance_m": 32.23046109906556,
+          "p95_distance_m": 69.4222081039101,
+          "area_error_km2": 0.01639999999999997,
+          "pred_area_km2": 1.0976,
+          "ref_area_km2": 1.0812,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 190.83460602568323,
+            "low_growth_m": 191.32071034293756,
+            "gap_m": -0.48610431725433045,
+            "threshold_m_s": 0.045896933981966065
+          },
+          "reference_growth": {
+            "high_growth_m": 213.90301541178803,
+            "low_growth_m": 161.7638724073509,
+            "gap_m": 52.13914300443713,
+            "threshold_m_s": 0.045896933981966065
+          },
+          "growth_asymmetry_error_m": -52.62524732169146,
+          "correct_asymmetry_sign": false
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.01380249449457556,
+          "corr": null,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.01052111425391815,
+          "corr": null,
+          "cells": 676
+        },
+        "exterior": {
+          "rmse_m_s": 0.012602869383923658,
+          "corr": null,
+          "cells": 38473
+        }
+      },
+      "training_mean_symmetric_distance_m": 13.565809434393302,
+      "estimation_seconds": 0.001055800006724894,
+      "inference_seconds": 0.025209799990989268,
+      "final_iou": 0.8965877437325905,
+      "final_symmetric_m": 32.23046109906556,
+      "diagnostics": {
+        "rate_m_s": 0.048208159067409356,
+        "rate_source": "estimated_from_mean_radial_growth",
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ]
+      },
+      "case": "A_product",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": true,
+      "clearance_m": 1100.0219316525154,
+      "reference_solver_seconds": 0.0392242000089027
+    },
+    {
+      "model": "ray_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9926629261976694,
+          "symmetric_distance_m": 2.1344739466122853,
+          "p95_distance_m": 6.056730909034572,
+          "area_error_km2": -0.0012000000000000899,
+          "pred_area_km2": 0.9228,
+          "ref_area_km2": 0.924,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 165.14831692478361,
+            "low_growth_m": 123.6649345460014,
+            "gap_m": 41.48338237878221,
+            "threshold_m_s": 0.04858104346881362
+          },
+          "reference_growth": {
+            "high_growth_m": 165.48594476353117,
+            "low_growth_m": 119.5726086718622,
+            "gap_m": 45.91333609166897,
+            "threshold_m_s": 0.04858104346881362
+          },
+          "growth_asymmetry_error_m": -4.429953712886757,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9738276990185387,
+          "symmetric_distance_m": 6.669420265960028,
+          "p95_distance_m": 15.099609589254406,
+          "area_error_km2": 0.009600000000000053,
+          "pred_area_km2": 1.0908,
+          "ref_area_km2": 1.0812,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 212.76056458818255,
+            "low_growth_m": 170.57089106179959,
+            "gap_m": 42.18967352638296,
+            "threshold_m_s": 0.045896933981966065
+          },
+          "reference_growth": {
+            "high_growth_m": 213.90301541178803,
+            "low_growth_m": 161.7638724073509,
+            "gap_m": 52.13914300443713,
+            "threshold_m_s": 0.045896933981966065
+          },
+          "growth_asymmetry_error_m": -9.94946947805417,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.010210201916216313,
+          "corr": 0.8384647554772574,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.0010125888058495128,
+          "corr": 0.9970311810448409,
+          "cells": 676
+        },
+        "exterior": {
+          "rmse_m_s": 0.01587086190081792,
+          "corr": 0.03960792621727211,
+          "cells": 38473
+        }
+      },
+      "training_mean_symmetric_distance_m": 1.004827727388683,
+      "estimation_seconds": 0.02332180002122186,
+      "inference_seconds": 0.033111500000813976,
+      "final_iou": 0.9738276990185387,
+      "final_symmetric_m": 6.669420265960028,
+      "diagnostics": {
+        "clipped_cells": 0,
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ],
+        "ray_bins": 180
+      },
+      "case": "A_product",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": true,
+      "clearance_m": 1100.0219316525154,
+      "reference_solver_seconds": 0.0392242000089027
+    },
+    {
+      "model": "fourier_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9987024221453287,
+          "symmetric_distance_m": 0.2535133470678311,
+          "p95_distance_m": 0.4554494895435901,
+          "area_error_km2": 0.00039999999999995595,
+          "pred_area_km2": 0.9244,
+          "ref_area_km2": 0.924,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 165.83018490768475,
+            "low_growth_m": 119.98306104643633,
+            "gap_m": 45.84712386124842,
+            "threshold_m_s": 0.04858104346881362
+          },
+          "reference_growth": {
+            "high_growth_m": 165.48594476353117,
+            "low_growth_m": 119.5726086718622,
+            "gap_m": 45.91333609166897,
+            "threshold_m_s": 0.04858104346881362
+          },
+          "growth_asymmetry_error_m": -0.0662122304205468,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9992606284658041,
+          "symmetric_distance_m": 0.32696665394663615,
+          "p95_distance_m": 0.618920062494321,
+          "area_error_km2": 0.0008000000000001339,
+          "pred_area_km2": 1.082,
+          "ref_area_km2": 1.0812,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 214.6299239836829,
+            "low_growth_m": 161.90279649246202,
+            "gap_m": 52.72712749122087,
+            "threshold_m_s": 0.045896933981966065
+          },
+          "reference_growth": {
+            "high_growth_m": 213.90301541178803,
+            "low_growth_m": 161.7638724073509,
+            "gap_m": 52.13914300443713,
+            "threshold_m_s": 0.045896933981966065
+          },
+          "growth_asymmetry_error_m": 0.5879844867837392,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.00016304552899544368,
+          "corr": 0.9999999999999999,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.0001193763154788976,
+          "corr": 1.0,
+          "cells": 676
+        },
+        "exterior": {
+          "rmse_m_s": 0.00013053340379401524,
+          "corr": 1.0,
+          "cells": 38473
+        }
+      },
+      "training_mean_symmetric_distance_m": 0.13674956530062699,
+      "estimation_seconds": 3.981488100020215,
+      "inference_seconds": 0.04436090000672266,
+      "final_iou": 0.9992606284658041,
+      "final_symmetric_m": 0.32696665394663615,
+      "diagnostics": {
+        "selected_by": "minimum_training_symmetric_distance",
+        "selected_r0_m_s": 0.05007560779695192,
+        "selected_amplitude": 0.5035476460086145,
+        "training_mean_symmetric_distance_m": 0.13674956530062699,
+        "candidates": [
+          {
+            "r0_init": 0.048208159067409356,
+            "amplitude_init": 0.0,
+            "r0": 0.050088871738773535,
+            "amplitude": 0.0012331046971467087,
+            "training_mean_symmetric_distance_m": 13.306197418508678,
+            "evaluations": 34,
+            "train_seconds": 1.0291281999961939,
+            "optimizer_success": true
+          },
+          {
+            "r0_init": 0.02,
+            "amplitude_init": 0.3,
+            "r0": 0.05007560779695192,
+            "amplitude": 0.5035476460086145,
+            "training_mean_symmetric_distance_m": 0.13674956530062699,
+            "evaluations": 50,
+            "train_seconds": 1.4544751000066753,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.1,
+            "amplitude_init": -0.3,
+            "r0": 0.047773464606881054,
+            "amplitude": 0.4876972075124962,
+            "training_mean_symmetric_distance_m": 3.100546950807927,
+            "evaluations": 50,
+            "train_seconds": 1.4949789000093006,
+            "optimizer_success": false
+          }
+        ],
+        "wavelength_m": 1500.0,
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ]
+      },
+      "case": "A_product",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": true,
+      "clearance_m": 1100.0219316525154,
+      "reference_solver_seconds": 0.0392242000089027
+    },
+    {
+      "model": "constant_rate_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.905103668261563,
+          "symmetric_distance_m": 26.611823577809524,
+          "p95_distance_m": 63.53458220875325,
+          "area_error_km2": -0.0032000000000000917,
+          "pred_area_km2": 0.954,
+          "ref_area_km2": 0.9572,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 151.6998926842177,
+            "low_growth_m": 151.43603346146728,
+            "gap_m": 0.26385922275042617,
+            "threshold_m_s": 0.05206810826262046
+          },
+          "reference_growth": {
+            "high_growth_m": 179.00806751096584,
+            "low_growth_m": 128.76887536365442,
+            "gap_m": 50.23919214731143,
+            "threshold_m_s": 0.05206810826262046
+          },
+          "growth_asymmetry_error_m": -49.975332924561,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.8888523512002631,
+          "symmetric_distance_m": 34.99141971422921,
+          "p95_distance_m": 79.77492832589157,
+          "area_error_km2": -0.0023999999999999577,
+          "pred_area_km2": 1.1476,
+          "ref_area_km2": 1.15,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 202.35502349428717,
+            "low_growth_m": 202.07171709502626,
+            "gap_m": 0.2833063992609084,
+            "threshold_m_s": 0.052038352096863486
+          },
+          "reference_growth": {
+            "high_growth_m": 239.4039038197786,
+            "low_growth_m": 174.2837272994077,
+            "gap_m": 65.1201765203709,
+            "threshold_m_s": 0.052038352096863486
+          },
+          "growth_asymmetry_error_m": -64.83687012111,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.01348089049492125,
+          "corr": null,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.012636422595237966,
+          "corr": null,
+          "cells": 727
+        },
+        "exterior": {
+          "rmse_m_s": 0.012488984731402995,
+          "corr": null,
+          "cells": 38429
+        }
+      },
+      "training_mean_symmetric_distance_m": 13.921132724620298,
+      "estimation_seconds": 0.0010488999832887203,
+      "inference_seconds": 0.030816399987088516,
+      "final_iou": 0.8888523512002631,
+      "final_symmetric_m": 34.99141971422921,
+      "diagnostics": {
+        "rate_m_s": 0.051018537716852705,
+        "rate_source": "estimated_from_mean_radial_growth",
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ]
+      },
+      "case": "A_product",
+      "ignition": "second",
+      "family_matches_fourier_estimator": true,
+      "clearance_m": 900.0219316525154,
+      "reference_solver_seconds": 0.04070069998851977
+    },
+    {
+      "model": "ray_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9896049896049897,
+          "symmetric_distance_m": 2.7456854819639833,
+          "p95_distance_m": 6.623990372207684,
+          "area_error_km2": -0.00040000000000006697,
+          "pred_area_km2": 0.9568,
+          "ref_area_km2": 0.9572,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 178.0691395668036,
+            "low_growth_m": 128.02122949193816,
+            "gap_m": 50.047910074865456,
+            "threshold_m_s": 0.05206810826262046
+          },
+          "reference_growth": {
+            "high_growth_m": 179.00806751096584,
+            "low_growth_m": 128.76887536365442,
+            "gap_m": 50.23919214731143,
+            "threshold_m_s": 0.05206810826262046
+          },
+          "growth_asymmetry_error_m": -0.19128207244597206,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9710644161212538,
+          "symmetric_distance_m": 8.946264186927515,
+          "p95_distance_m": 16.846843042061554,
+          "area_error_km2": -0.011199999999999877,
+          "pred_area_km2": 1.1388,
+          "ref_area_km2": 1.15,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 236.16480564971772,
+            "low_growth_m": 176.42504676537988,
+            "gap_m": 59.739758884337846,
+            "threshold_m_s": 0.052038352096863486
+          },
+          "reference_growth": {
+            "high_growth_m": 239.4039038197786,
+            "low_growth_m": 174.2837272994077,
+            "gap_m": 65.1201765203709,
+            "threshold_m_s": 0.052038352096863486
+          },
+          "growth_asymmetry_error_m": -5.380417636033059,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.005975711190626526,
+          "corr": 0.9225154818089308,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.0008297087616358844,
+          "corr": 0.9984038515451493,
+          "cells": 727
+        },
+        "exterior": {
+          "rmse_m_s": 0.016571872033379207,
+          "corr": 0.021686349250326104,
+          "cells": 38429
+        }
+      },
+      "training_mean_symmetric_distance_m": 0.6304204928331052,
+      "estimation_seconds": 0.02800970000680536,
+      "inference_seconds": 0.04711499999393709,
+      "final_iou": 0.9710644161212538,
+      "final_symmetric_m": 8.946264186927515,
+      "diagnostics": {
+        "clipped_cells": 0,
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ],
+        "ray_bins": 180
+      },
+      "case": "A_product",
+      "ignition": "second",
+      "family_matches_fourier_estimator": true,
+      "clearance_m": 900.0219316525154,
+      "reference_solver_seconds": 0.04070069998851977
+    },
+    {
+      "model": "fourier_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 1.0,
+          "symmetric_distance_m": 0.08359602487529777,
+          "p95_distance_m": 0.18395970525072286,
+          "area_error_km2": 0.0,
+          "pred_area_km2": 0.9572,
+          "ref_area_km2": 0.9572,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 179.49580971991168,
+            "low_growth_m": 128.85524880948782,
+            "gap_m": 50.64056091042386,
+            "threshold_m_s": 0.05206810826262046
+          },
+          "reference_growth": {
+            "high_growth_m": 179.00806751096584,
+            "low_growth_m": 128.76887536365442,
+            "gap_m": 50.23919214731143,
+            "threshold_m_s": 0.05206810826262046
+          },
+          "growth_asymmetry_error_m": 0.40136876311242986,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9996522948539638,
+          "symmetric_distance_m": 0.10984397229799003,
+          "p95_distance_m": 0.2213944004269274,
+          "area_error_km2": 0.000400000000000178,
+          "pred_area_km2": 1.1504,
+          "ref_area_km2": 1.15,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 239.6241235341853,
+            "low_growth_m": 174.75364433670768,
+            "gap_m": 64.87047919747761,
+            "threshold_m_s": 0.052038352096863486
+          },
+          "reference_growth": {
+            "high_growth_m": 239.4039038197786,
+            "low_growth_m": 174.2837272994077,
+            "gap_m": 65.1201765203709,
+            "threshold_m_s": 0.052038352096863486
+          },
+          "growth_asymmetry_error_m": -0.24969732289329727,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 2.9615975679427e-05,
+          "corr": 1.0,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 3.771126547965546e-05,
+          "corr": 1.0,
+          "cells": 727
+        },
+        "exterior": {
+          "rmse_m_s": 3.247802262499399e-05,
+          "corr": 1.0,
+          "cells": 38429
+        }
+      },
+      "training_mean_symmetric_distance_m": 0.042187259098660945,
+      "estimation_seconds": 5.683340199990198,
+      "inference_seconds": 0.04662559999269433,
+      "final_iou": 0.9996522948539638,
+      "final_symmetric_m": 0.10984397229799003,
+      "diagnostics": {
+        "selected_by": "minimum_training_symmetric_distance",
+        "selected_r0_m_s": 0.05001748992333501,
+        "selected_amplitude": 0.5009218542927806,
+        "training_mean_symmetric_distance_m": 0.042187259098660945,
+        "candidates": [
+          {
+            "r0_init": 0.051018537716852705,
+            "amplitude_init": 0.0,
+            "r0": 0.04987384179538656,
+            "amplitude": 0.48486159579688043,
+            "training_mean_symmetric_distance_m": 0.5263527408663169,
+            "evaluations": 50,
+            "train_seconds": 2.186026100011077,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.02,
+            "amplitude_init": 0.3,
+            "r0": 0.05001748992333501,
+            "amplitude": 0.5009218542927806,
+            "training_mean_symmetric_distance_m": 0.042187259098660945,
+            "evaluations": 50,
+            "train_seconds": 1.8568034000054467,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.1,
+            "amplitude_init": -0.3,
+            "r0": 0.051608925409698136,
+            "amplitude": 0.4473902331805156,
+            "training_mean_symmetric_distance_m": 2.349882452267647,
+            "evaluations": 50,
+            "train_seconds": 1.6374912000028417,
+            "optimizer_success": false
+          }
+        ],
+        "wavelength_m": 1500.0,
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ]
+      },
+      "case": "A_product",
+      "ignition": "second",
+      "family_matches_fourier_estimator": true,
+      "clearance_m": 900.0219316525154,
+      "reference_solver_seconds": 0.04070069998851977
+    },
+    {
+      "model": "constant_rate_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9158615136876006,
+          "symmetric_distance_m": 24.470029489741492,
+          "p95_distance_m": 49.603047817323315,
+          "area_error_km2": -0.0028000000000000247,
+          "pred_area_km2": 0.9504,
+          "ref_area_km2": 0.9532,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 149.65607373383472,
+            "low_growth_m": 149.6774067734367,
+            "gap_m": -0.021333039601984183,
+            "threshold_m_s": 0.050241407562341314
+          },
+          "reference_growth": {
+            "high_growth_m": 175.00978416328766,
+            "low_growth_m": 127.25347843156804,
+            "gap_m": 47.75630573171962,
+            "threshold_m_s": 0.050241407562341314
+          },
+          "growth_asymmetry_error_m": -47.777638771321605,
+          "correct_asymmetry_sign": false
+        },
+        "4000": {
+          "iou": 0.9000672947510094,
+          "symmetric_distance_m": 31.314144600362457,
+          "p95_distance_m": 65.88870300889998,
+          "area_error_km2": -0.0028000000000001357,
+          "pred_area_km2": 1.128,
+          "ref_area_km2": 1.1308,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 199.59771118217728,
+            "low_growth_m": 199.68628237771856,
+            "gap_m": -0.08857119554127735,
+            "threshold_m_s": 0.05017103543621365
+          },
+          "reference_growth": {
+            "high_growth_m": 231.80109078237592,
+            "low_growth_m": 171.0199290072029,
+            "gap_m": 60.78116177517302,
+            "threshold_m_s": 0.05017103543621365
+          },
+          "growth_asymmetry_error_m": -60.869732970714296,
+          "correct_asymmetry_sign": false
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.00794637795229954,
+          "corr": null,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.010174139360459479,
+          "corr": null,
+          "cells": 710
+        },
+        "exterior": {
+          "rmse_m_s": 0.008948368237315157,
+          "corr": null,
+          "cells": 38439
+        }
+      },
+      "training_mean_symmetric_distance_m": 12.445875307978408,
+      "estimation_seconds": 0.0010283000010531396,
+      "inference_seconds": 0.035982800007332116,
+      "final_iou": 0.9000672947510094,
+      "final_symmetric_m": 31.314144600362457,
+      "diagnostics": {
+        "rate_m_s": 0.05037405584595046,
+        "rate_source": "estimated_from_mean_radial_growth",
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ]
+      },
+      "case": "B_shifted",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 1130.03548993087,
+      "reference_solver_seconds": 0.04034239999600686
+    },
+    {
+      "model": "ray_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9958036088963491,
+          "symmetric_distance_m": 1.1989325532848012,
+          "p95_distance_m": 3.015203140996565,
+          "area_error_km2": -0.0040000000000000036,
+          "pred_area_km2": 0.9492,
+          "ref_area_km2": 0.9532,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 174.06399235180618,
+            "low_growth_m": 126.31759277781867,
+            "gap_m": 47.7463995739875,
+            "threshold_m_s": 0.050241407562341314
+          },
+          "reference_growth": {
+            "high_growth_m": 175.00978416328766,
+            "low_growth_m": 127.25347843156804,
+            "gap_m": 47.75630573171962,
+            "threshold_m_s": 0.050241407562341314
+          },
+          "growth_asymmetry_error_m": -0.009906157732118004,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9943482868244437,
+          "symmetric_distance_m": 1.8440863166721781,
+          "p95_distance_m": 5.770540785512284,
+          "area_error_km2": -0.0032000000000000917,
+          "pred_area_km2": 1.1276,
+          "ref_area_km2": 1.1308,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 231.64296934879988,
+            "low_growth_m": 170.63803394230564,
+            "gap_m": 61.00493540649424,
+            "threshold_m_s": 0.05017103543621365
+          },
+          "reference_growth": {
+            "high_growth_m": 231.80109078237592,
+            "low_growth_m": 171.0199290072029,
+            "gap_m": 60.78116177517302,
+            "threshold_m_s": 0.05017103543621365
+          },
+          "growth_asymmetry_error_m": 0.2237736313212224,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.0034952469816327135,
+          "corr": 0.9546820372843188,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.0006244716773903884,
+          "corr": 0.9993011236533317,
+          "cells": 710
+        },
+        "exterior": {
+          "rmse_m_s": 0.01281018144008218,
+          "corr": 0.06151436763483608,
+          "cells": 38439
+        }
+      },
+      "training_mean_symmetric_distance_m": 0.7385378863743355,
+      "estimation_seconds": 0.0259383000084199,
+      "inference_seconds": 0.03500319999875501,
+      "final_iou": 0.9943482868244437,
+      "final_symmetric_m": 1.8440863166721781,
+      "diagnostics": {
+        "clipped_cells": 0,
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ],
+        "ray_bins": 180
+      },
+      "case": "B_shifted",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 1130.03548993087,
+      "reference_solver_seconds": 0.04034239999600686
+    },
+    {
+      "model": "fourier_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9175642087821044,
+          "symmetric_distance_m": 22.994260189820515,
+          "p95_distance_m": 51.39753200038324,
+          "area_error_km2": -0.05480000000000007,
+          "pred_area_km2": 0.8984,
+          "ref_area_km2": 0.9532,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 143.50752726978155,
+            "low_growth_m": 127.66329419817221,
+            "gap_m": 15.844233071609338,
+            "threshold_m_s": 0.050241407562341314
+          },
+          "reference_growth": {
+            "high_growth_m": 175.00978416328766,
+            "low_growth_m": 127.25347843156804,
+            "gap_m": 47.75630573171962,
+            "threshold_m_s": 0.050241407562341314
+          },
+          "growth_asymmetry_error_m": -31.912072660110283,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.8976679429168117,
+          "symmetric_distance_m": 31.788826866048495,
+          "p95_distance_m": 70.16533609603258,
+          "area_error_km2": -0.08079999999999998,
+          "pred_area_km2": 1.05,
+          "ref_area_km2": 1.1308,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 189.98455646491638,
+            "low_growth_m": 167.6346774933867,
+            "gap_m": 22.349878971529677,
+            "threshold_m_s": 0.05017103543621365
+          },
+          "reference_growth": {
+            "high_growth_m": 231.80109078237592,
+            "low_growth_m": 171.0199290072029,
+            "gap_m": 60.78116177517302,
+            "threshold_m_s": 0.05017103543621365
+          },
+          "growth_asymmetry_error_m": -38.43128280364334,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.007325612203031466,
+          "corr": 0.5704181894053716,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.010832050133641545,
+          "corr": 0.5037665531977572,
+          "cells": 710
+        },
+        "exterior": {
+          "rmse_m_s": 0.012997691883066941,
+          "corr": -0.01664404830282071,
+          "cells": 38439
+        }
+      },
+      "training_mean_symmetric_distance_m": 11.197338673415693,
+      "estimation_seconds": 3.723386500001652,
+      "inference_seconds": 0.042350900010205805,
+      "final_iou": 0.8976679429168117,
+      "final_symmetric_m": 31.788826866048495,
+      "diagnostics": {
+        "selected_by": "minimum_training_symmetric_distance",
+        "selected_r0_m_s": 0.047034178723812776,
+        "selected_amplitude": 0.3727979906959331,
+        "training_mean_symmetric_distance_m": 11.197338673415693,
+        "candidates": [
+          {
+            "r0_init": 0.05037405584595046,
+            "amplitude_init": 0.0,
+            "r0": 0.05342355832290285,
+            "amplitude": 0.0916060968154923,
+            "training_mean_symmetric_distance_m": 11.861800927052837,
+            "evaluations": 50,
+            "train_seconds": 1.0836494000104722,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.02,
+            "amplitude_init": 0.3,
+            "r0": 0.047034178723812776,
+            "amplitude": 0.3727979906959331,
+            "training_mean_symmetric_distance_m": 11.197338673415693,
+            "evaluations": 50,
+            "train_seconds": 1.17304119997425,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.1,
+            "amplitude_init": -0.3,
+            "r0": 0.04877548860971232,
+            "amplitude": 0.307245455976254,
+            "training_mean_symmetric_distance_m": 11.219477549289222,
+            "evaluations": 50,
+            "train_seconds": 1.4638386000005994,
+            "optimizer_success": false
+          }
+        ],
+        "wavelength_m": 1500.0,
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ]
+      },
+      "case": "B_shifted",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 1130.03548993087,
+      "reference_solver_seconds": 0.04034239999600686
+    },
+    {
+      "model": "constant_rate_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9132757912042746,
+          "symmetric_distance_m": 23.71533408510114,
+          "p95_distance_m": 48.61983217759422,
+          "area_error_km2": -0.005199999999999982,
+          "pred_area_km2": 0.9284,
+          "ref_area_km2": 0.9336,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 142.71984630202115,
+            "low_growth_m": 142.73249138409835,
+            "gap_m": -0.012645082077199277,
+            "threshold_m_s": 0.050207431323589714
+          },
+          "reference_growth": {
+            "high_growth_m": 168.20277781740057,
+            "low_growth_m": 123.01384375462143,
+            "gap_m": 45.18893406277914,
+            "threshold_m_s": 0.050207431323589714
+          },
+          "growth_asymmetry_error_m": -45.20157914485634,
+          "correct_asymmetry_sign": false
+        },
+        "4000": {
+          "iou": 0.8950086058519794,
+          "symmetric_distance_m": 31.52077218270887,
+          "p95_distance_m": 67.31519241576213,
+          "area_error_km2": -0.015600000000000058,
+          "pred_area_km2": 1.0932,
+          "ref_area_km2": 1.1088,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 190.3466473924383,
+            "low_growth_m": 190.37974438431502,
+            "gap_m": -0.033096991876703896,
+            "threshold_m_s": 0.05034888876944147
+          },
+          "reference_growth": {
+            "high_growth_m": 225.68342323624333,
+            "low_growth_m": 166.55076689763737,
+            "gap_m": 59.132656338605955,
+            "threshold_m_s": 0.05034888876944147
+          },
+          "growth_asymmetry_error_m": -59.16575333048266,
+          "correct_asymmetry_sign": false
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.007753943176537789,
+          "corr": null,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.00986187871042571,
+          "corr": null,
+          "cells": 686
+        },
+        "exterior": {
+          "rmse_m_s": 0.009187145744631836,
+          "corr": null,
+          "cells": 38470
+        }
+      },
+      "training_mean_symmetric_distance_m": 11.941283869963076,
+      "estimation_seconds": 0.0011319000041112304,
+      "inference_seconds": 0.02655189999495633,
+      "final_iou": 0.8950086058519794,
+      "final_symmetric_m": 31.52077218270887,
+      "diagnostics": {
+        "rate_m_s": 0.04804094530852609,
+        "rate_source": "estimated_from_mean_radial_growth",
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ]
+      },
+      "case": "B_shifted",
+      "ignition": "second",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 930.03548993087,
+      "reference_solver_seconds": 0.04119560000253841
+    },
+    {
+      "model": "ray_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9922879177377892,
+          "symmetric_distance_m": 1.7571162386492931,
+          "p95_distance_m": 3.3176360454436935,
+          "area_error_km2": -0.007199999999999984,
+          "pred_area_km2": 0.9264,
+          "ref_area_km2": 0.9336,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 166.25042699040623,
+            "low_growth_m": 121.47848961843697,
+            "gap_m": 44.77193737196926,
+            "threshold_m_s": 0.050207431323589714
+          },
+          "reference_growth": {
+            "high_growth_m": 168.20277781740057,
+            "low_growth_m": 123.01384375462143,
+            "gap_m": 45.18893406277914,
+            "threshold_m_s": 0.050207431323589714
+          },
+          "growth_asymmetry_error_m": -0.41699669080988144,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9902597402597403,
+          "symmetric_distance_m": 3.125987220875934,
+          "p95_distance_m": 7.4606603694126985,
+          "area_error_km2": -0.01079999999999992,
+          "pred_area_km2": 1.098,
+          "ref_area_km2": 1.1088,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 222.61132905908025,
+            "low_growth_m": 164.22726703017437,
+            "gap_m": 58.38406202890587,
+            "threshold_m_s": 0.05034888876944147
+          },
+          "reference_growth": {
+            "high_growth_m": 225.68342323624333,
+            "low_growth_m": 166.55076689763737,
+            "gap_m": 59.132656338605955,
+            "threshold_m_s": 0.05034888876944147
+          },
+          "growth_asymmetry_error_m": -0.7485943097000813,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.003681569662308899,
+          "corr": 0.9470117166436116,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.0005783537212897935,
+          "corr": 0.9991888324331459,
+          "cells": 686
+        },
+        "exterior": {
+          "rmse_m_s": 0.012427472452777654,
+          "corr": 0.055995038711531095,
+          "cells": 38470
+        }
+      },
+      "training_mean_symmetric_distance_m": 0.5973327021183955,
+      "estimation_seconds": 0.025361600011819974,
+      "inference_seconds": 0.03541349997976795,
+      "final_iou": 0.9902597402597403,
+      "final_symmetric_m": 3.125987220875934,
+      "diagnostics": {
+        "clipped_cells": 0,
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ],
+        "ray_bins": 180
+      },
+      "case": "B_shifted",
+      "ignition": "second",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 930.03548993087,
+      "reference_solver_seconds": 0.04119560000253841
+    },
+    {
+      "model": "fourier_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9133825944170771,
+          "symmetric_distance_m": 23.136078040556573,
+          "p95_distance_m": 47.71435594899644,
+          "area_error_km2": -0.0028000000000000247,
+          "pred_area_km2": 0.9308,
+          "ref_area_km2": 0.9336,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 144.3054937442976,
+            "low_growth_m": 143.3727998823352,
+            "gap_m": 0.9326938619624059,
+            "threshold_m_s": 0.050207431323589714
+          },
+          "reference_growth": {
+            "high_growth_m": 168.20277781740057,
+            "low_growth_m": 123.01384375462143,
+            "gap_m": 45.18893406277914,
+            "threshold_m_s": 0.050207431323589714
+          },
+          "growth_asymmetry_error_m": -44.256240200816734,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.8981768145854833,
+          "symmetric_distance_m": 30.543085663988407,
+          "p95_distance_m": 65.79286255681187,
+          "area_error_km2": -0.010399999999999965,
+          "pred_area_km2": 1.0984,
+          "ref_area_km2": 1.1088,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 192.26655874299504,
+            "low_growth_m": 191.19295135115092,
+            "gap_m": 1.0736073918441207,
+            "threshold_m_s": 0.05034888876944147
+          },
+          "reference_growth": {
+            "high_growth_m": 225.68342323624333,
+            "low_growth_m": 166.55076689763737,
+            "gap_m": 59.132656338605955,
+            "threshold_m_s": 0.05034888876944147
+          },
+          "growth_asymmetry_error_m": -58.059048946761834,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.00796870793322799,
+          "corr": 0.08653334152187653,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.009768030760165235,
+          "corr": 0.06333270034730319,
+          "cells": 686
+        },
+        "exterior": {
+          "rmse_m_s": 0.009150057789817792,
+          "corr": -0.006775003088633368,
+          "cells": 38470
+        }
+      },
+      "training_mean_symmetric_distance_m": 11.724990112709431,
+      "estimation_seconds": 3.8875690999848302,
+      "inference_seconds": 0.02700500001083128,
+      "final_iou": 0.8981768145854833,
+      "final_symmetric_m": 30.543085663988407,
+      "diagnostics": {
+        "selected_by": "minimum_training_symmetric_distance",
+        "selected_r0_m_s": 0.04851302361680039,
+        "selected_amplitude": -0.04068766110995181,
+        "training_mean_symmetric_distance_m": 11.724990112709431,
+        "candidates": [
+          {
+            "r0_init": 0.04804094530852609,
+            "amplitude_init": 0.0,
+            "r0": 0.04851302361680039,
+            "amplitude": -0.04068766110995181,
+            "training_mean_symmetric_distance_m": 11.724990112709431,
+            "evaluations": 50,
+            "train_seconds": 1.0897298000054434,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.02,
+            "amplitude_init": 0.3,
+            "r0": 0.048785351666898784,
+            "amplitude": -0.03596060748029227,
+            "training_mean_symmetric_distance_m": 11.731097748103073,
+            "evaluations": 50,
+            "train_seconds": 1.1581784000154585,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.1,
+            "amplitude_init": -0.3,
+            "r0": 0.05570150470525606,
+            "amplitude": 0.024768226764240796,
+            "training_mean_symmetric_distance_m": 14.87179254445553,
+            "evaluations": 50,
+            "train_seconds": 1.6362030000018422,
+            "optimizer_success": false
+          }
+        ],
+        "wavelength_m": 1500.0,
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ]
+      },
+      "case": "B_shifted",
+      "ignition": "second",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 930.03548993087,
+      "reference_solver_seconds": 0.04119560000253841
+    },
+    {
+      "model": "constant_rate_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.959012965286491,
+          "symmetric_distance_m": 11.256015131458817,
+          "p95_distance_m": 18.15595485684541,
+          "area_error_km2": -0.009599999999999942,
+          "pred_area_km2": 0.932,
+          "ref_area_km2": 0.9416,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 145.6204114754795,
+            "low_growth_m": 145.64485217450974,
+            "gap_m": -0.0244406990302366,
+            "threshold_m_s": 0.0498772357547586
+          },
+          "reference_growth": {
+            "high_growth_m": 158.4024501579863,
+            "low_growth_m": 136.11966728321156,
+            "gap_m": 22.28278287477474,
+            "threshold_m_s": 0.0498772357547586
+          },
+          "growth_asymmetry_error_m": -22.307223573804976,
+          "correct_asymmetry_sign": false
+        },
+        "4000": {
+          "iou": 0.9482879105520615,
+          "symmetric_distance_m": 15.639019443472431,
+          "p95_distance_m": 25.366514062786717,
+          "area_error_km2": -0.006399999999999961,
+          "pred_area_km2": 1.112,
+          "ref_area_km2": 1.1184,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 194.25463217273133,
+            "low_growth_m": 194.28593283702276,
+            "gap_m": -0.031300664291421754,
+            "threshold_m_s": 0.04998157315420035
+          },
+          "reference_growth": {
+            "high_growth_m": 212.17411062051139,
+            "low_growth_m": 181.05049032687654,
+            "gap_m": 31.123620293634843,
+            "threshold_m_s": 0.04998157315420035
+          },
+          "growth_asymmetry_error_m": -31.154920957926265,
+          "correct_asymmetry_sign": false
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.002535500987895226,
+          "corr": null,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.004015233221429174,
+          "corr": null,
+          "cells": 700
+        },
+        "exterior": {
+          "rmse_m_s": 0.011197152536681113,
+          "corr": null,
+          "cells": 38449
+        }
+      },
+      "training_mean_symmetric_distance_m": 5.236848654203993,
+      "estimation_seconds": 0.0010150000161956996,
+      "inference_seconds": 0.026769199990667403,
+      "final_iou": 0.9482879105520615,
+      "final_symmetric_m": 15.639019443472431,
+      "diagnostics": {
+        "rate_m_s": 0.04902356894701157,
+        "rate_source": "estimated_from_mean_radial_growth",
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ]
+      },
+      "case": "C_logistic",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 1143.8285501514656,
+      "reference_solver_seconds": 0.03505380000569858
+    },
+    {
+      "model": "ray_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.994052676295667,
+          "symmetric_distance_m": 1.4575101748043235,
+          "p95_distance_m": 2.8403306457786415,
+          "area_error_km2": -0.005599999999999938,
+          "pred_area_km2": 0.936,
+          "ref_area_km2": 0.9416,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 156.53402282429354,
+            "low_growth_m": 135.12459682100035,
+            "gap_m": 21.40942600329319,
+            "threshold_m_s": 0.0498772357547586
+          },
+          "reference_growth": {
+            "high_growth_m": 158.4024501579863,
+            "low_growth_m": 136.11966728321156,
+            "gap_m": 22.28278287477474,
+            "threshold_m_s": 0.0498772357547586
+          },
+          "growth_asymmetry_error_m": -0.8733568714815476,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.990343347639485,
+          "symmetric_distance_m": 2.099337019613354,
+          "p95_distance_m": 4.591591962606162,
+          "area_error_km2": -0.010800000000000143,
+          "pred_area_km2": 1.1076,
+          "ref_area_km2": 1.1184,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 208.9611742937755,
+            "low_growth_m": 180.44767816442135,
+            "gap_m": 28.513496129354166,
+            "threshold_m_s": 0.04998157315420035
+          },
+          "reference_growth": {
+            "high_growth_m": 212.17411062051139,
+            "low_growth_m": 181.05049032687654,
+            "gap_m": 31.123620293634843,
+            "threshold_m_s": 0.04998157315420035
+          },
+          "growth_asymmetry_error_m": -2.610124164280677,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.00168441385529672,
+          "corr": 0.9416076031327113,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.0005464321132867523,
+          "corr": 0.9973239158999582,
+          "cells": 700
+        },
+        "exterior": {
+          "rmse_m_s": 0.0072749621448821924,
+          "corr": 0.9691259550202915,
+          "cells": 38449
+        }
+      },
+      "training_mean_symmetric_distance_m": 0.7300583144216988,
+      "estimation_seconds": 0.02694599999813363,
+      "inference_seconds": 0.02741420001257211,
+      "final_iou": 0.990343347639485,
+      "final_symmetric_m": 2.099337019613354,
+      "diagnostics": {
+        "clipped_cells": 0,
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ],
+        "ray_bins": 180
+      },
+      "case": "C_logistic",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 1143.8285501514656,
+      "reference_solver_seconds": 0.03505380000569858
+    },
+    {
+      "model": "fourier_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9685534591194969,
+          "symmetric_distance_m": 8.303540456401581,
+          "p95_distance_m": 20.367409717193066,
+          "area_error_km2": -0.005199999999999982,
+          "pred_area_km2": 0.9364,
+          "ref_area_km2": 0.9416,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 150.62328428976434,
+            "low_growth_m": 142.31620080872426,
+            "gap_m": 8.307083481040081,
+            "threshold_m_s": 0.0498772357547586
+          },
+          "reference_growth": {
+            "high_growth_m": 158.4024501579863,
+            "low_growth_m": 136.11966728321156,
+            "gap_m": 22.28278287477474,
+            "threshold_m_s": 0.0498772357547586
+          },
+          "growth_asymmetry_error_m": -13.975699393734658,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9585091420534458,
+          "symmetric_distance_m": 12.80055059239869,
+          "p95_distance_m": 29.74509109617556,
+          "area_error_km2": -0.008800000000000141,
+          "pred_area_km2": 1.1096,
+          "ref_area_km2": 1.1184,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 199.3575123700787,
+            "low_growth_m": 190.0682150220711,
+            "gap_m": 9.289297348007608,
+            "threshold_m_s": 0.04998157315420035
+          },
+          "reference_growth": {
+            "high_growth_m": 212.17411062051139,
+            "low_growth_m": 181.05049032687654,
+            "gap_m": 31.123620293634843,
+            "threshold_m_s": 0.04998157315420035
+          },
+          "growth_asymmetry_error_m": -21.834322945627235,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.003108168884804156,
+          "corr": 0.7374880786173184,
+          "cells": 1252
+        },
+        "annulus": {
+          "rmse_m_s": 0.003114608742427207,
+          "corr": 0.6357489568064645,
+          "cells": 700
+        },
+        "exterior": {
+          "rmse_m_s": 0.011847764856140825,
+          "corr": 0.008748368300270521,
+          "cells": 38449
+        }
+      },
+      "training_mean_symmetric_distance_m": 3.5078267470272517,
+      "estimation_seconds": 3.6968506000121124,
+      "inference_seconds": 0.033074800012400374,
+      "final_iou": 0.9585091420534458,
+      "final_symmetric_m": 12.80055059239869,
+      "diagnostics": {
+        "selected_by": "minimum_training_symmetric_distance",
+        "selected_r0_m_s": 0.04992992971424891,
+        "selected_amplitude": 0.13978301345093727,
+        "training_mean_symmetric_distance_m": 3.5078267470272517,
+        "candidates": [
+          {
+            "r0_init": 0.04902356894701157,
+            "amplitude_init": 0.0,
+            "r0": 0.04992992971424891,
+            "amplitude": 0.13978301345093727,
+            "training_mean_symmetric_distance_m": 3.5078267470272517,
+            "evaluations": 50,
+            "train_seconds": 1.1172443999967072,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.02,
+            "amplitude_init": 0.3,
+            "r0": 0.04980900453088155,
+            "amplitude": 0.14289190065697627,
+            "training_mean_symmetric_distance_m": 3.510080737427721,
+            "evaluations": 50,
+            "train_seconds": 1.1582385999790858,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.1,
+            "amplitude_init": -0.3,
+            "r0": 0.050037346353158416,
+            "amplitude": 0.13972866206017687,
+            "training_mean_symmetric_distance_m": 3.531908689796369,
+            "evaluations": 50,
+            "train_seconds": 1.4186731999798212,
+            "optimizer_success": false
+          }
+        ],
+        "wavelength_m": 1500.0,
+        "estimated_front_center_m": [
+          200.55572737185446,
+          -147.54716981132074
+        ]
+      },
+      "case": "C_logistic",
+      "ignition": "primary",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 1143.8285501514656,
+      "reference_solver_seconds": 0.03505380000569858
+    },
+    {
+      "model": "constant_rate_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9595735228787206,
+          "symmetric_distance_m": 10.625698846993991,
+          "p95_distance_m": 18.23603172094775,
+          "area_error_km2": -0.0036000000000000476,
+          "pred_area_km2": 0.8804,
+          "ref_area_km2": 0.884,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 128.7535987643972,
+            "low_growth_m": 128.7646493804458,
+            "gap_m": -0.011050616048606798,
+            "threshold_m_s": 0.043801676735620146
+          },
+          "reference_growth": {
+            "high_growth_m": 140.90735573572007,
+            "low_growth_m": 119.68089734725623,
+            "gap_m": 21.22645838846384,
+            "threshold_m_s": 0.043801676735620146
+          },
+          "growth_asymmetry_error_m": -21.237509004512447,
+          "correct_asymmetry_sign": false
+        },
+        "4000": {
+          "iou": 0.9521821631878558,
+          "symmetric_distance_m": 14.769873363392353,
+          "p95_distance_m": 25.531640211734032,
+          "area_error_km2": -0.008799999999999919,
+          "pred_area_km2": 1.0244,
+          "ref_area_km2": 1.0332,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 171.7255616841955,
+            "low_growth_m": 171.75621239283518,
+            "gap_m": -0.030650708639683444,
+            "threshold_m_s": 0.04377343671901296
+          },
+          "reference_growth": {
+            "high_growth_m": 188.68168185391966,
+            "low_growth_m": 159.2773521424707,
+            "gap_m": 29.404329711448952,
+            "threshold_m_s": 0.04377343671901296
+          },
+          "growth_asymmetry_error_m": -29.434980420088635,
+          "correct_asymmetry_sign": false
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.0024160156566243075,
+          "corr": null,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.00381567864698678,
+          "corr": null,
+          "cells": 612
+        },
+        "exterior": {
+          "rmse_m_s": 0.01186499116937397,
+          "corr": null,
+          "cells": 38544
+        }
+      },
+      "training_mean_symmetric_distance_m": 4.969122171740439,
+      "estimation_seconds": 0.0010141000093426555,
+      "inference_seconds": 0.0300588000100106,
+      "final_iou": 0.9521821631878558,
+      "final_symmetric_m": 14.769873363392353,
+      "diagnostics": {
+        "rate_m_s": 0.04334887959685563,
+        "rate_source": "estimated_from_mean_radial_growth",
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ]
+      },
+      "case": "C_logistic",
+      "ignition": "second",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 943.8285501514656,
+      "reference_solver_seconds": 0.03398930002003908
+    },
+    {
+      "model": "ray_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.995475113122172,
+          "symmetric_distance_m": 1.3519250924236328,
+          "p95_distance_m": 2.5459141097988507,
+          "area_error_km2": -0.0040000000000000036,
+          "pred_area_km2": 0.88,
+          "ref_area_km2": 0.884,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 139.17642018638892,
+            "low_growth_m": 118.73921102950037,
+            "gap_m": 20.437209156888557,
+            "threshold_m_s": 0.043801676735620146
+          },
+          "reference_growth": {
+            "high_growth_m": 140.90735573572007,
+            "low_growth_m": 119.68089734725623,
+            "gap_m": 21.22645838846384,
+            "threshold_m_s": 0.043801676735620146
+          },
+          "growth_asymmetry_error_m": -0.7892492315752833,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.994579945799458,
+          "symmetric_distance_m": 1.9889791709419256,
+          "p95_distance_m": 4.257424316356674,
+          "area_error_km2": -0.005599999999999827,
+          "pred_area_km2": 1.0276,
+          "ref_area_km2": 1.0332,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 185.83852290260938,
+            "low_growth_m": 158.44818591198492,
+            "gap_m": 27.390336990624462,
+            "threshold_m_s": 0.04377343671901296
+          },
+          "reference_growth": {
+            "high_growth_m": 188.68168185391966,
+            "low_growth_m": 159.2773521424707,
+            "gap_m": 29.404329711448952,
+            "threshold_m_s": 0.04377343671901296
+          },
+          "growth_asymmetry_error_m": -2.01399272082449,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.0015662880998458177,
+          "corr": 0.9413196161687556,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.00048335787200112226,
+          "corr": 0.9976449946500983,
+          "cells": 612
+        },
+        "exterior": {
+          "rmse_m_s": 0.00823902520248441,
+          "corr": 0.9564649944289919,
+          "cells": 38544
+        }
+      },
+      "training_mean_symmetric_distance_m": 0.6489361955219461,
+      "estimation_seconds": 0.026513799995882437,
+      "inference_seconds": 0.03179370000725612,
+      "final_iou": 0.994579945799458,
+      "final_symmetric_m": 1.9889791709419256,
+      "diagnostics": {
+        "clipped_cells": 0,
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ],
+        "ray_bins": 180
+      },
+      "case": "C_logistic",
+      "ignition": "second",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 943.8285501514656,
+      "reference_solver_seconds": 0.03398930002003908
+    },
+    {
+      "model": "fourier_inverse_solver",
+      "forecast": {
+        "3000": {
+          "iou": 0.9609062638827188,
+          "symmetric_distance_m": 10.381072027804517,
+          "p95_distance_m": 18.316763257816902,
+          "area_error_km2": -0.0023999999999999577,
+          "pred_area_km2": 0.8816,
+          "ref_area_km2": 0.884,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 129.3507993289671,
+            "low_growth_m": 128.51366878677976,
+            "gap_m": 0.8371305421873387,
+            "threshold_m_s": 0.043801676735620146
+          },
+          "reference_growth": {
+            "high_growth_m": 140.90735573572007,
+            "low_growth_m": 119.68089734725623,
+            "gap_m": 21.22645838846384,
+            "threshold_m_s": 0.043801676735620146
+          },
+          "growth_asymmetry_error_m": -20.3893278462765,
+          "correct_asymmetry_sign": true
+        },
+        "4000": {
+          "iou": 0.9526335733232285,
+          "symmetric_distance_m": 14.418711509428137,
+          "p95_distance_m": 25.829377606951883,
+          "area_error_km2": -0.005199999999999871,
+          "pred_area_km2": 1.028,
+          "ref_area_km2": 1.0332,
+          "burned_components": 1,
+          "n_contours": 1,
+          "growth": {
+            "high_growth_m": 172.5286717717476,
+            "low_growth_m": 171.54515166818697,
+            "gap_m": 0.983520103560636,
+            "threshold_m_s": 0.04377343671901296
+          },
+          "reference_growth": {
+            "high_growth_m": 188.68168185391966,
+            "low_growth_m": 159.2773521424707,
+            "gap_m": 29.404329711448952,
+            "threshold_m_s": 0.04377343671901296
+          },
+          "growth_asymmetry_error_m": -28.420809607888316,
+          "correct_asymmetry_sign": true
+        }
+      },
+      "rate_error": {
+        "interior": {
+          "rmse_m_s": 0.0024059245246979,
+          "corr": 0.20209381043558827,
+          "cells": 1245
+        },
+        "annulus": {
+          "rmse_m_s": 0.0037366104804523606,
+          "corr": 0.19520954689265255,
+          "cells": 612
+        },
+        "exterior": {
+          "rmse_m_s": 0.011877831124282348,
+          "corr": 0.01461225988046818,
+          "cells": 38544
+        }
+      },
+      "training_mean_symmetric_distance_m": 4.847702841112415,
+      "estimation_seconds": 3.5676094999944326,
+      "inference_seconds": 0.030113300017546862,
+      "final_iou": 0.9526335733232285,
+      "final_symmetric_m": 14.418711509428137,
+      "diagnostics": {
+        "selected_by": "minimum_training_symmetric_distance",
+        "selected_r0_m_s": 0.04333797213457957,
+        "selected_amplitude": 0.03209182862681414,
+        "training_mean_symmetric_distance_m": 4.847702841112415,
+        "candidates": [
+          {
+            "r0_init": 0.04334887959685563,
+            "amplitude_init": 0.0,
+            "r0": 0.04352946794461729,
+            "amplitude": 0.002489056154003868,
+            "training_mean_symmetric_distance_m": 4.9460009720527935,
+            "evaluations": 50,
+            "train_seconds": 0.96017700000084,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.02,
+            "amplitude_init": 0.3,
+            "r0": 0.04333797213457957,
+            "amplitude": 0.03209182862681414,
+            "training_mean_symmetric_distance_m": 4.847702841112415,
+            "evaluations": 50,
+            "train_seconds": 1.0465994999976829,
+            "optimizer_success": false
+          },
+          {
+            "r0_init": 0.1,
+            "amplitude_init": -0.3,
+            "r0": 0.04234124034567291,
+            "amplitude": -0.09149336206672352,
+            "training_mean_symmetric_distance_m": 6.240807686199799,
+            "evaluations": 50,
+            "train_seconds": 1.557373900024686,
+            "optimizer_success": false
+          }
+        ],
+        "wavelength_m": 1500.0,
+        "estimated_front_center_m": [
+          -399.1634623714433,
+          302.5503355704698
+        ]
+      },
+      "case": "C_logistic",
+      "ignition": "second",
+      "family_matches_fourier_estimator": false,
+      "clearance_m": 943.8285501514656,
+      "reference_solver_seconds": 0.03398930002003908
+    }
+  ]
+}

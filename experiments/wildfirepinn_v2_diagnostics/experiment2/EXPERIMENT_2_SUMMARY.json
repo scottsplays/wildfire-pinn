@@ -1,0 +1,94 @@
+{
+  "experiment": "2",
+  "status": "2a_only",
+  "answer": "Hard IC is exact at t=0. By T the PINN IoU is 0.897 and the contour is 32 m from the numerical front. Fast and slow sides of the reference grow 220 m and 175 m; the PINN grows 200 m on both, with phi_t about -0.055 m/s and |grad| about 1. Wind, irregular, and adaptive trainings were not run.",
+  "runs": [
+    {
+      "scenario": "2a",
+      "label": "spatial R, circular initial fire, uniform samples",
+      "sampling": "uniform",
+      "oracle_front_sampling": false,
+      "train_seconds": 41.83449120001751,
+      "solver_seconds": 0.07615850001457147,
+      "numerical_r0_max_change_m": 0.0,
+      "initial_iou": 1.0,
+      "final_iou": 0.8965044551062371,
+      "final_symmetric_m": 32.414903406430994,
+      "final_p95_m": 81.79188814086753,
+      "final_area_error_km2": 0.051200000000000134,
+      "final_components": 1,
+      "final_contours": 1,
+      "volume_residual_m_s": 0.009970284067094326,
+      "front_residual_m_s": 0.00963954534381628,
+      "final_train_pde": 0.00015840785636100918,
+      "pinn_growth": {
+        "high_r_growth_m": 200.30066064272876,
+        "low_r_growth_m": 201.02294406094578
+      },
+      "numerical_growth": {
+        "high_r_growth_m": 220.39511168217888,
+        "low_r_growth_m": 175.38964973053817
+      },
+      "pinn_wind": null,
+      "numerical_wind": null,
+      "times": [
+        {
+          "iou": 1.0,
+          "symmetric_distance_m": 1.226842892699653e-05,
+          "p95_distance_m": 3.126734182720754e-05,
+          "area_error_km2": 0.0,
+          "pred_area_km2": 0.5008,
+          "ref_area_km2": 0.5008,
+          "burned_components": 1,
+          "n_contours": 1,
+          "t_s": 0.0
+        },
+        {
+          "iou": 0.9470046082949308,
+          "symmetric_distance_m": 12.825239607461366,
+          "p95_distance_m": 23.73550631843348,
+          "area_error_km2": 0.0008000000000000229,
+          "pred_area_km2": 0.6764,
+          "ref_area_km2": 0.6756,
+          "burned_components": 1,
+          "n_contours": 1,
+          "t_s": 1333.3333333333333
+        },
+        {
+          "iou": 0.9155844155844156,
+          "symmetric_distance_m": 23.222424946783338,
+          "p95_distance_m": 54.065283975658936,
+          "area_error_km2": 0.026000000000000023,
+          "pred_area_km2": 0.898,
+          "ref_area_km2": 0.872,
+          "burned_components": 1,
+          "n_contours": 1,
+          "t_s": 2666.6666666666665
+        },
+        {
+          "iou": 0.8965044551062371,
+          "symmetric_distance_m": 32.414903406430994,
+          "p95_distance_m": 81.79188814086753,
+          "area_error_km2": 0.051200000000000134,
+          "pred_area_km2": 1.1324,
+          "ref_area_km2": 1.0812,
+          "burned_components": 1,
+          "n_contours": 1,
+          "t_s": 4000.0
+        }
+      ],
+      "refinement": {
+        "40m": {
+          "solver_seconds": 0.015099999989615753,
+          "symmetric_to_10m_m": 3.1506376001421392
+        },
+        "20m": {
+          "solver_seconds": 0.09726129999035038,
+          "symmetric_to_10m_m": 1.0081658067587556
+        },
+        "10m_solver_seconds": 2.016425600013463
+      }
+    }
+  ],
+  "experiments_3_to_5": "not_started"
+}

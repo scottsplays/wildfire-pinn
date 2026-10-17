@@ -240,6 +240,14 @@ class IngestionTests(unittest.TestCase):
     def test_gridmet_parser(self):
         self.assertEqual(ni.parse_gridmet_csv("time,x,y,dead_fuel_moisture_100hr\n2026-10-15,1,2,9.5\n2026-10-16,1,2,8.25\n"), 8.25)
 
+    def test_gridmet_packed_values(self):
+        """Live THREDDS CSV returns packed values (149.0 = 14.9 %); fill values are skipped."""
+        live = ('time,latitude[unit="degrees_north"],longitude[unit="degrees_east"],dead_fuel_moisture_100hr[unit="Percent"]\n'
+                "2026-10-13T00:00:00Z,37.17,-122.22,149.0\n2026-10-14T00:00:00Z,37.17,-122.22,32767.0\n")
+        self.assertAlmostEqual(ni.parse_gridmet_csv(live), 14.9)
+        self.assertIsNone(ni.unpack_fm100(32767.0))
+        self.assertEqual(ni.unpack_fm100(7.5), 7.5)
+
 
 class RequestHandlingTests(unittest.TestCase):
     def test_vertex_wrapper(self):

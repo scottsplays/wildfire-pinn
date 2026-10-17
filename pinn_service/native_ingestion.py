@@ -334,12 +334,24 @@ def parse_gridmet_csv(text: str) -> float:
     col = next((i for i, h in enumerate(header) if "moisture" in h or "fm100" in h), len(header) - 1)
     for row in reversed(rows[1:]):
         try:
-            value = float(row[col])
+            value = unpack_fm100(float(row[col]))
         except (ValueError, IndexError):
             continue
-        if 0 < value < 100:
+        if value is not None:
             return value
     raise ValueError(f"gridMET rows had no valid fuel moisture: {preview!r}")
+
+
+def unpack_fm100(raw: float) -> float | None:
+    """gridMET packs fm100 as an integer with scale_factor 0.1, and the THREDDS point-CSV
+    service returns the packed number (seen live: 149.0 'Percent' = 14.9 %). Physical
+    100-h fuel moisture stays below ~60 %, so values in (60, 600] are unpacked; the
+    32767 fill value and anything else implausible is rejected."""
+    if 0 < raw <= 60:
+        return raw
+    if 60 < raw <= 600:
+        return raw * 0.1
+    return None
 
 
 def emc_percent(temp_c: np.ndarray, rh: np.ndarray) -> np.ndarray:
@@ -411,13 +423,20 @@ class NativeSource:
 
 # --------------------------------------------------------------------------- smoke test
 
+def _fm100_check(ref: dt.datetime) -> str:  # pragma: no cover - live network
+    fm = gridmet_fm100(-122.22, 37.17, ref.date())
+    w = open_meteo_hourly(-122.22, 37.17, ref - dt.timedelta(hours=24), ref)
+    emc = float(np.mean(emc_percent(w.temp_c, w.rh)))
+    return f"{fm:.1f} % (independent 24 h RH/T estimate: {emc:.1f} %; the two should be the same order of magnitude)"
+
+
 def _smoke() -> int:  # pragma: no cover - live network check for a developer machine
     logging.basicConfig(level=logging.INFO)
     ref = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0) - dt.timedelta(hours=3)
     ok = True
     for name, call in (
         ("Open-Meteo", lambda: open_meteo_hourly(-122.22, 37.17, ref - dt.timedelta(hours=24), ref + dt.timedelta(hours=7)).source),
-        ("gridMET FM100", lambda: f"{gridmet_fm100(-122.22, 37.17, ref.date()):.1f} %"),
+        ("gridMET FM100", lambda: _fm100_check(ref)),
         ("FIRMS (all of California, last 24 h)", lambda: f"{len(firms_detections([-124.5, 32.5, -114.0, 42.1], ref, 24))} detections"),
         ("static layers", lambda: static_layers().source),
     ):

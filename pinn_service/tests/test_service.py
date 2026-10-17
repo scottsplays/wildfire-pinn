@@ -231,6 +231,12 @@ class IngestionTests(unittest.TestCase):
         self.assertLess(float(ni.emc_percent(31, 14)), 4)
         self.assertGreater(float(ni.emc_percent(15, 80)), 14)
 
+    def test_key_file_skips_comments(self):
+        """Regression: firms_key.txt starts with '#' comment lines (as the training CLI expects)."""
+        text = "\ufeff# NASA FIRMS map key\n# get one at https://firms.modaps.eosdis.nasa.gov/api/map_key/\n\n  'abcdef0123456789abcdef0123456789'  \n"
+        self.assertEqual(ni.key_from_text(text), "abcdef0123456789abcdef0123456789")
+        self.assertIsNone(ni.key_from_text("# only comments\n\n"))
+
     def test_gridmet_parser(self):
         self.assertEqual(ni.parse_gridmet_csv("time,x,y,dead_fuel_moisture_100hr\n2026-10-15,1,2,9.5\n2026-10-16,1,2,8.25\n"), 8.25)
 

@@ -57,16 +57,23 @@ DEFAULT_STATIC = PACKAGE_DIR / "static" / "bay_area_static.npz"
 # --------------------------------------------------------------------------- HTTP
 
 def _urllib_fetch(url: str, timeout: float = 30.0) -> bytes:
+    import urllib.error
+
     request = urllib.request.Request(url, headers={"User-Agent": "WildfirePINN/0.2 (research)"})
-    last: Exception | None = None
+    last = ""
     for attempt in range(2):
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:
                 return response.read()
+        except urllib.error.HTTPError as exc:
+            body = exc.read(300).decode("utf-8", "replace").strip().replace("\n", " ")
+            last = f"HTTP {exc.code}: {body or exc.reason}"
+            if 400 <= exc.code < 500:
+                break  # a client error will not fix itself on retry
         except Exception as exc:  # noqa: BLE001 - network errors of every kind are retried once
-            last = exc
-            time.sleep(0.5 * (attempt + 1))
-    raise ConnectionError(f"{urllib.parse.urlsplit(url).netloc}: {last}") from last
+            last = str(exc)
+        time.sleep(0.5 * (attempt + 1))
+    raise ConnectionError(f"{urllib.parse.urlsplit(url).netloc}: {last}")
 
 
 FETCH: Callable[[str], bytes] = _urllib_fetch
@@ -148,6 +155,15 @@ def _static_cached(path: str) -> FeatureGrid:
 
 # --------------------------------------------------------------------------- FIRMS
 
+def key_from_text(text: str) -> str | None:
+    """First non-blank line that is not a '#' comment (same rule as wildfire_pinn.cli)."""
+    for line in text.lstrip("\ufeff").splitlines():
+        line = line.strip().strip('"').strip("'")
+        if line and not line.startswith("#"):
+            return line
+    return None
+
+
 def firms_key() -> str:
     key = os.environ.get("FIRMS_MAP_KEY", "").strip()
     if key:
@@ -155,9 +171,9 @@ def firms_key() -> str:
     for folder in (Path.cwd(), PACKAGE_DIR, PACKAGE_DIR.parent):
         path = folder / "firms_key.txt"
         if path.exists():
-            text = path.read_text().strip().splitlines()
-            if text and text[0].strip():
-                return text[0].strip()
+            key = key_from_text(path.read_text(encoding="utf-8-sig"))
+            if key:
+                return key
     raise ServiceError(
         503,
         "no NASA FIRMS map key: set FIRMS_MAP_KEY or put the key in firms_key.txt "
@@ -311,8 +327,9 @@ def gridmet_fm100(lon: float, lat: float, day: dt.date) -> float:
 
 def parse_gridmet_csv(text: str) -> float:
     rows = [r for r in csv.reader(io.StringIO(text)) if r]
+    preview = " ".join(text.split())[:160]
     if len(rows) < 2:
-        raise ValueError("gridMET returned no rows")
+        raise ValueError(f"gridMET returned no rows: {preview!r}")
     header = [h.lower() for h in rows[0]]
     col = next((i for i, h in enumerate(header) if "moisture" in h or "fm100" in h), len(header) - 1)
     for row in reversed(rows[1:]):
@@ -322,7 +339,7 @@ def parse_gridmet_csv(text: str) -> float:
             continue
         if 0 < value < 100:
             return value
-    raise ValueError("gridMET rows had no valid fuel moisture")
+    raise ValueError(f"gridMET rows had no valid fuel moisture: {preview!r}")
 
 
 def emc_percent(temp_c: np.ndarray, rh: np.ndarray) -> np.ndarray:

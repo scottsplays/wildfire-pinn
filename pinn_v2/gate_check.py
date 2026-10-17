@@ -6,14 +6,24 @@
 
 The PINN (plan doc, "The v2 approach", steps 1-2):
 
-    phi(x, y, t) = phi0(x, y) + tau * S * g_theta(tau, X, Y),   tau = t / H,  S = R_ref * H
+    plain:  phi(x, y, t) = phi0(x, y)                + tau * S * g_theta(tau, X, Y)
+    local:  phi(x, y, t) = phi0(x, y) - t * F0(x, y) + tau * S * g_theta(tau, X, Y)   (default)
+
+    tau = t / H,  S = R_ref * H,  F0 = R (1 + 0.6 n0.w)_+  (local front speed, normal of phi0,
+    smoothed over one cell)
 
 phi0 is the signed distance to the current fire (metres, negative inside), so
-tau = 0 is the observed fire exactly. g is trained ONLY on the level-set residual
+tau = 0 is the observed fire exactly. The "local" form gives the network the
+physics' first guess (every point moves at its own local speed): it already stops
+at non-burnable ground and leans downwind, so g only learns the non-local
+correction, e.g. a front that arrives late because it crossed slow fuel first.
+Plain networks learn smooth averages first (spectral bias) and on a patchy fuel
+map produce a round blob. g is trained ONLY on the level-set residual
 
     phi_t + R (1 + 0.6 n.w)_+ |grad phi| = 0
 
-the same equation, rate and wind factor as pinn_service. No future observation is used.
+the same equation, rate and wind factor as pinn_service, written as a front-speed error
+(F - V_n) so it stays bounded where phi is steep. No future observation is used.
 
 The reference is the Godunov solver in pinn_service.physics (boundary bug fixed).
 Gate (decided before running): at 6 h, IoU(PINN, solver) >= 0.90, IoU of the NEW
@@ -26,7 +36,7 @@ Cases
           (-121.935, 38.004), NW wind 7 m/s, FM100 11 % (gridMET's value there today):
           patchy, heterogeneous R, the hard case.
 
-Outputs: outputs/pinn_v2_gate/<case>.json, <case>.png, <case>_model.pt
+Outputs: outputs/pinn_v2_gate/<case>_<ansatz>.json, .png, _model.pt
 """
 
 from __future__ import annotations
@@ -157,7 +167,19 @@ def gate_passed(m: dict) -> bool:
 
 # --------------------------------------------------------------------------- PINN (torch)
 
-def train_and_predict(case: Case, steps: int, batch: int, seed: int, log_every: int = 200):
+def local_speed(case: Case, smooth_cells: float = 1.0) -> np.ndarray:
+    """F0 = R (1 + c n0.w)_+ with n0 the outward normal of phi0, smoothed over ~1 cell (prior only;
+    the PDE residual always uses the exact R)."""
+    gy, gx = np.gradient(case.phi0, case.res)
+    mag = np.hypot(gx, gy) + 1e-12
+    if case.wind is None:
+        f0 = case.rate.copy()
+    else:
+        f0 = case.rate * np.clip(1 + C_WDIR * (case.wind[0] * gx + case.wind[1] * gy) / mag, 0, None)
+    return ndimage.gaussian_filter(f0, smooth_cells) if smooth_cells else f0
+
+
+def train_and_predict(case: Case, steps: int, batch: int, seed: int, ansatz: str = "local", log_every: int = 200):
     import torch
     from torch import nn
 
@@ -173,8 +195,11 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, log_every: 
     S = r_ref * H                                                        # metres moved by a typical fast front
     gy, gx = np.gradient(case.phi0, case.res)
     east, north = case.wind if case.wind is not None else (np.zeros_like(case.rate), np.zeros_like(case.rate))
+    f0 = local_speed(case) if ansatz == "local" else np.zeros_like(case.rate)
+    f0y, f0x = np.gradient(f0, case.res)
     grids = {k: torch.as_tensor(v, **f32) for k, v in
-             {"phi0": case.phi0, "phi0_x": gx, "phi0_y": gy, "rate": case.rate, "east": east, "north": north}.items()}
+             {"phi0": case.phi0, "phi0_x": gx, "phi0_y": gy, "rate": case.rate, "east": east, "north": north,
+              "f0": f0, "f0_x": f0x, "f0_y": f0y}.items()}
     ny, nx = case.phi0.shape
     x_min, y_min = float(case.xs[0]), float(case.ys[0])
 
@@ -236,13 +261,16 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, log_every: 
         g = model.g(tau, X, Y)
         g_tau, g_X, g_Y = torch.autograd.grad(g.sum(), (tau, X, Y), create_graph=True)
         xd, yd = x.detach(), y.detach()
-        phi_t = r_ref * (g + tau * g_tau)                                  # (S / H) = r_ref
-        phi_x = sample("phi0_x", xd, yd) + tau * S * g_X / L
-        phi_y = sample("phi0_y", xd, yd) + tau * S * g_Y / L
+        phi_t = -sample("f0", xd, yd) + r_ref * (g + tau * g_tau)          # (S / H) = r_ref
+        phi_x = sample("phi0_x", xd, yd) - tau * H * sample("f0_x", xd, yd) + tau * S * g_X / L
+        phi_y = sample("phi0_y", xd, yd) - tau * H * sample("f0_y", xd, yd) + tau * S * g_Y / L
         mag = torch.sqrt(phi_x ** 2 + phi_y ** 2 + 1e-12)
         align = (sample("east", xd, yd) * phi_x + sample("north", xd, yd) * phi_y) / mag
         speed = sample("rate", xd, yd) * torch.clamp(1 + C_WDIR * align, min=0.0)
-        return (phi_t + speed * mag) / r_ref
+        # front-speed form: (phi_t + F|grad phi|) / |grad phi| = F - V_n, the error in normal speed.
+        # Same zero set as the raw residual, but bounded where phi is steep (fuel edges under the
+        # "local" first guess) or flat; |grad phi| is floored at 0.2 so kinks do not blow it up.
+        return (phi_t + speed * mag) / (r_ref * torch.clamp(mag, min=0.2))
 
     history = []
     started = time.perf_counter()
@@ -254,8 +282,8 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, log_every: 
         opt.step()
         sched.step()
         if step % log_every == 0 or step == 1 or step == steps:
-            history.append((step, float(loss)))
-            print(f"  [{case.name}] step {step:5d}/{steps}  residual^2 {float(loss):.3e}  ({time.perf_counter() - started:.0f} s)", flush=True)
+            history.append((step, float(loss.detach())))
+            print(f"  [{case.name}] step {step:5d}/{steps}  residual^2 {float(loss.detach()):.3e}  ({time.perf_counter() - started:.0f} s)", flush=True)
 
     # predict phi on the grid at each horizon
     X, Y = np.meshgrid(case.xs, case.ys)
@@ -270,8 +298,8 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, log_every: 
                 xs_, ys_ = xt[k:k + 65536], yt[k:k + 65536]
                 out.append(model.g(torch.full_like(xs_, tau_val), xs_, ys_))
             g = torch.cat(out).cpu().numpy().reshape(X.shape)
-            preds[h] = case.phi0 + tau_val * S * g
-    meta = {"steps": steps, "batch": batch, "seed": seed, "device": str(device), "r_ref_m_s": r_ref,
+            preds[h] = case.phi0 - tau_val * H * f0 + tau_val * S * g
+    meta = {"ansatz": ansatz, "steps": steps, "batch": batch, "seed": seed, "device": str(device), "r_ref_m_s": r_ref,
             "train_seconds": round(time.perf_counter() - started, 1), "loss_history": history}
     return preds, meta, model
 
@@ -302,10 +330,16 @@ def figure(case: Case, preds, refs, path: Path) -> None:
     plt.close(fig)
 
 
-def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path) -> dict:
-    print(f"\n== {case.name}: grid {case.phi0.shape}, {case.res:g} m cells, horizon 6 h; {case.notes}")
+def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path, ansatz: str = "local") -> dict:
+    print(f"\n== {case.name} ({ansatz} ansatz): grid {case.phi0.shape}, {case.res:g} m cells, horizon 6 h; {case.notes}")
     refs = reference(case)
-    preds, meta, model = train_and_predict(case, steps, batch, seed)
+    prior = {}
+    if ansatz == "local":
+        f0 = local_speed(case)
+        prior = {h: compare(case.phi0 - h * 3600 * f0, refs[h], case.phi0, case.res) for h in HORIZONS_H}
+        print("   first guess alone (no network): " + "; ".join(
+            f"+{h} h IoU {prior[h]['iou']:.3f} / new {prior[h]['growth_iou']:.3f}" for h in HORIZONS_H))
+    preds, meta, model = train_and_predict(case, steps, batch, seed, ansatz)
     results = {h: compare(preds[h], refs[h], case.phi0, case.res) for h in HORIZONS_H}
     if case.name == "circle":
         for h in HORIZONS_H:
@@ -314,14 +348,16 @@ def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path) -> dict:
                 results[h][f"{key}_radius_m"] = round(float(np.sqrt((field_ < 0).sum() * case.res ** 2 / np.pi)), 1)
             results[h]["exact_radius_m"] = exact
     passed = gate_passed(results[6])
-    report = {"case": case.name, "gate": GATE, "passed_at_6h": passed, "horizons": results, "notes": case.notes, "training": meta}
+    report = {"case": case.name, "ansatz": ansatz, "gate": GATE, "passed_at_6h": passed, "horizons": results,
+              "first_guess_only": prior, "notes": case.notes, "training": meta}
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / f"{case.name}.json").write_text(json.dumps(report, indent=2))
-    figure(case, preds, refs, out_dir / f"{case.name}.png")
+    stem = f"{case.name}_{ansatz}"
+    (out_dir / f"{stem}.json").write_text(json.dumps(report, indent=2))
+    figure(case, preds, refs, out_dir / f"{stem}.png")
     try:
         import torch
 
-        torch.save({"state_dict": model.state_dict(), "case": case.name, "meta": meta}, out_dir / f"{case.name}_model.pt")
+        torch.save({"state_dict": model.state_dict(), "case": case.name, "meta": meta}, out_dir / f"{stem}_model.pt")
     except Exception:  # noqa: BLE001
         pass
     print(f"-- {case.name} vs solver:")
@@ -329,7 +365,7 @@ def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path) -> dict:
         r = results[h]
         extra = f", radius PINN {r['pinn_radius_m']} / solver {r['solver_radius_m']} / exact {r['exact_radius_m']} m" if "exact_radius_m" in r else ""
         print(f"   +{h} h: IoU {r['iou']:.3f}, new-area IoU {r['growth_iou']:.3f}, boundary {r['boundary_cells']:.2f} cells ({r['boundary_m']:.0f} m){extra}")
-    print(f"   GATE at 6 h: {'PASS' if passed else 'FAIL'}   (figure: {out_dir / (case.name + '.png')})")
+    print(f"   GATE at 6 h: {'PASS' if passed else 'FAIL'}   (figure: {out_dir / (stem + '.png')})")
     return report
 
 
@@ -339,6 +375,7 @@ def main() -> None:
     parser.add_argument("--steps", type=int, default=4000)
     parser.add_argument("--batch", type=int, default=4096)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--ansatz", choices=["local", "plain"], default="local")
     parser.add_argument("--quick", action="store_true", help="600 steps, batch 2048")
     parser.add_argument("--out", default=str(REPO / "outputs" / "pinn_v2_gate"))
     args = parser.parse_args()
@@ -346,7 +383,7 @@ def main() -> None:
         args.steps, args.batch = 600, 2048
     builders = {"circle": circle_case, "fuel": fuel_case}
     names = list(builders) if args.case == "all" else [args.case]
-    summary = {n: run(builders[n](), args.steps, args.batch, args.seed, Path(args.out))["passed_at_6h"] for n in names}
+    summary = {n: run(builders[n](), args.steps, args.batch, args.seed, Path(args.out), args.ansatz)["passed_at_6h"] for n in names}
     print("\nSUMMARY:", ", ".join(f"{n} {'PASS' if ok else 'FAIL'}" for n, ok in summary.items()))
     if args.quick:
         print("(quick run: too few steps to judge the gate; run without --quick for the real check)")

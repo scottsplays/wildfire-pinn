@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 SUPPORTED_HORIZONS = (0, 1, 3, 6)
 MODEL_TYPE = "pinn"
-MODEL_VERSION = "0.2.1-physics-baseline"
+MODEL_VERSION = "0.2.2-physics-baseline"
 DEFAULT_PORT = 8082
 DEFAULT_HOUR_UTC = 21          # sponsor FAQ Q2: date-only requests mean 21:00 UTC
 BAY_AREA_BBOX = (-122.9, 36.9, -121.5, 38.3)
@@ -54,7 +54,7 @@ class PredictionRequest(BaseModel):
     bbox: list[float]
     time_horizon: int
     model_type: str
-    date: str
+    date: str | None = None   # contract says required; the team adapter can send None -> "now"
     additional_params: AdditionalParams = Field(default_factory=AdditionalParams)
 
     @field_validator("bbox")
@@ -70,8 +70,9 @@ class PredictionRequest(BaseModel):
     @field_validator("time_horizon")
     @classmethod
     def _horizon(cls, value: int) -> int:
-        if not 0 <= value <= max(SUPPORTED_HORIZONS):
-            raise ValueError(f"time_horizon must be between 0 and {max(SUPPORTED_HORIZONS)} hours")
+        # The team adapter's PredictionRequest defaults to 24; horizons above 6 are served as 0/1/3/6.
+        if not 0 <= value <= 72:
+            raise ValueError("time_horizon must be between 0 and 72 hours (forecasts go to 6 h)")
         return value
 
     @field_validator("model_type")
@@ -84,7 +85,9 @@ class PredictionRequest(BaseModel):
 
     @field_validator("date")
     @classmethod
-    def _date(cls, value: str) -> str:
+    def _date(cls, value: str | None) -> str | None:
+        if value is None or not str(value).strip():
+            return None
         parse_reference_time(value)  # raises ValueError on garbage
         return value.strip()
 
@@ -104,7 +107,10 @@ class PredictionRequest(BaseModel):
     @property
     def reference_time(self) -> dt.datetime:
         """Forecast start (horizon 0) in UTC."""
-        ref = parse_reference_time(self.date)
+        if self.date is None:
+            ref = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
+        else:
+            ref = parse_reference_time(self.date)
         if self.additional_params.hour is not None:
             ref = ref.replace(hour=self.additional_params.hour, minute=0, second=0, microsecond=0)
         return ref

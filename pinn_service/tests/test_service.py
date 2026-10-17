@@ -160,6 +160,12 @@ class ContractTests(unittest.TestCase):
             lon, lat = np.mean(f["geometry"]["coordinates"][0][:4], axis=0)
             self.assertFalse(abs(lon + 122.3) < 0.02 and abs(lat - 37.7) < 0.02)
 
+    def test_cells_on_adapter_fixture_lattice(self):
+        """Cell edges sit on round 0.01 deg lines, like the U-Net fixture cells."""
+        for f in self.fc["features"][:50]:
+            ring = np.array(f["geometry"]["coordinates"][0])
+            self.assertTrue(np.allclose(ring * 100, np.round(ring * 100), atol=1e-6), ring)
+
     def test_burned_area_never_shrinks(self):
         by_h: dict[int, dict[int, float]] = {}
         for f in self.fc["features"]:
@@ -295,6 +301,15 @@ class RequestHandlingTests(unittest.TestCase):
         self.assertGreater(fc["metadata"]["fires"][0]["detections"], 50)
         self.assertGreater(fc["metadata"]["cells_outside_bbox_dropped"], 0)
 
+    def test_team_adapter_defaults(self):
+        """ml_adapter/main.py sends time_horizon=24, date=None and an extra 'mock' field."""
+        status, fc = handle({"bbox": BBOX, "time_horizon": 24, "model_type": "pinn", "date": None, "mock": False})
+        self.assertEqual(status, 200, fc)
+        self.assertEqual(fc["metadata"]["horizons_hours"], [0, 1, 3, 6])
+        now = dt.datetime.now(dt.timezone.utc)
+        ref = dt.datetime.fromisoformat(fc["metadata"]["reference_time"].replace("Z", "+00:00"))
+        self.assertLess(abs((now - ref).total_seconds()), 2 * 3600)
+
     def test_confidence_threshold(self):
         _, fc = handle(request(additional_params={"confidence_threshold": 0.5}))
         self.assertTrue(fc["features"])
@@ -304,7 +319,7 @@ class RequestHandlingTests(unittest.TestCase):
         cases = [
             (request(model_type="unet"), 422),
             (request(bbox=[-121.5, 36.9, -122.9, 38.3]), 422),
-            (request(time_horizon=12), 422),
+            (request(time_horizon=99), 422),
             (request(date="yesterday"), 422),
             (request(additional_params={"hour": 25}), 422),
             ({"instances": []}, 400),

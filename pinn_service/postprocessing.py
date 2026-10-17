@@ -10,7 +10,8 @@ The grid. Sponsor FAQ Q1 (rev 2): any stable California 1 km lattice id is
 accepted; the backend stubs unknown cells from the polygon we send. For the
 ensemble to combine U-Net and PINN cell by cell, both services should use the
 SAME lattice. Until the U-Net's lattice is shared, the service uses a
-provisional California-wide lon/lat lattice (~1 km); point ``GRID_SPEC`` at a
+provisional California-wide 0.01 deg lattice (the cell geometry of the adapter's
+U-Net fixtures); point ``GRID_SPEC`` at a
 CSV (grid_id,min_lon,min_lat,max_lon,max_lat) or JSON spec to switch. The
 response metadata says which lattice was used.
 """
@@ -29,7 +30,7 @@ import numpy as np
 
 from .contract import MODEL_TYPE, MODEL_VERSION
 
-CALIFORNIA_EXTENT = (-124.5, 32.5, -114.0, 42.1)
+CALIFORNIA_EXTENT = (-124.5, 32.5, -114.0, 42.1)  # multiples of 0.01 deg
 
 
 @dataclass(frozen=True)
@@ -77,20 +78,20 @@ class GridSpec:
         return int(self.ids.ravel()[int(flat)])
 
 
-def provisional_grid(bbox=CALIFORNIA_EXTENT, km: float = 1.0) -> GridSpec:
-    """Regular lon/lat lattice of ~km cells over California; ids row-major from the SW corner, starting at 1.
+def provisional_grid(bbox=CALIFORNIA_EXTENT, step_deg: float = 0.01) -> GridSpec:
+    """Regular 0.01 x 0.01 degree lattice over California, cell edges on round 0.01 degree lines.
 
-    Cell size is exact (1 km x 1 km) at the extent's middle latitude, 37.3 N, and within 4 % across the
-    Bay Area. The ids depend only on this definition, so they are stable across requests and bboxes.
+    This matches the cell geometry in the team adapter's U-Net fixtures
+    (ml_adapter/fixtures/frontend_team_geojson_files: e.g. [-122.15, 37.05]-[-122.14, 37.06]),
+    so PINN and U-Net cells coincide. A cell is ~0.89 km (E-W) x 1.11 km (N-S) at 37 N.
+    ids: row-major from the SW corner (-124.5, 32.5), starting at 1. The id formula is
+    provisional until the U-Net's numbering is shared; switch with GRID_SPEC.
     """
     min_lon, min_lat, max_lon, max_lat = bbox
-    lat0 = (min_lat + max_lat) / 2
-    dlat = km / 111.0
-    dlon = km / (111.0 * np.cos(np.deg2rad(lat0)))
-    nrows = int(np.ceil((max_lat - min_lat) / dlat))
-    ncols = int(np.ceil((max_lon - min_lon) / dlon))
+    nrows = int(round((max_lat - min_lat) / step_deg))
+    ncols = int(round((max_lon - min_lon) / step_deg))
     ids = np.arange(1, nrows * ncols + 1, dtype=np.int64).reshape(nrows, ncols)
-    return GridSpec(min_lon, min_lat, dlon, dlat, ids, f"provisional California lon/lat lattice ({km:g} km)", True)
+    return GridSpec(min_lon, min_lat, step_deg, step_deg, ids, "provisional California 0.01 deg lattice (same cells as the adapter fixtures)", True)
 
 
 def grid_from_csv(path: Path) -> GridSpec:

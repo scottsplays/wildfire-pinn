@@ -415,6 +415,9 @@ class NativeSource:
     def environment(self, req: PredictionRequest, lon0: float, lat0: float) -> Environment:
         return NativeEnvironment(lon0, lat0, req.reference_time, max(req.horizons))
 
+    def fuel(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+        return static_layers().sample("fuel_fbfm40", lon, lat, fill=0.0)
+
     def describe(self) -> dict:
         path = os.environ.get("STATIC_LAYERS", str(DEFAULT_STATIC))
         return {"ingestion": "native (FIRMS, Open-Meteo, gridMET, LANDFIRE static)", "static_layers": path,

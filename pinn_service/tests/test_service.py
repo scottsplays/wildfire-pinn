@@ -70,6 +70,8 @@ class FakeFetch:
                 if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
                     rows.append(f"{y:.5f},{x:.5f},340.1,0.39,0.36,{FIRE_DAY},2000,N,VIIRS,{conf},2.0NRT,290.2,12.5,D")
             rows.append(f"37.30000,-122.40000,301.0,0.39,0.36,{FIRE_DAY},2000,N,VIIRS,l,2.0NRT,280.0,1.1,D")      # low confidence: dropped
+            if bbox[0] <= -122.3 <= bbox[2] and bbox[1] <= 37.7 <= bbox[3]:
+                rows.append(f"37.70000,-122.30000,360.0,0.39,0.36,{FIRE_DAY},2000,N,VIIRS,h,2.0NRT,300.0,40.0,D")  # 'refinery flare' on non-burnable land
         if source == "VIIRS_NOAA20_NRT" and "2026-10-14" in dates:
             rows.append(f"37.17000,-122.22000,340.0,0.39,0.36,2026-10-14,2000,1,VIIRS,h,2.0NRT,290.0,9.0,D")  # older than lookback
         return ("\n".join(rows) + "\n").encode()
@@ -148,6 +150,16 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(meta["fires_detected"], 1)
         self.assertTrue(any("gridMET FM100 7.0" in n for n in meta["input_notes"]))
 
+    def test_non_wildland_hot_spot_rejected(self):
+        """A high-confidence detection on non-burnable land (refinery, flare) is reported, not forecast."""
+        rejected = self.fc["metadata"]["detections_rejected"]
+        self.assertEqual(len(rejected), 1)
+        self.assertEqual(rejected[0]["centre_lon_lat"], [-122.3, 37.7])
+        self.assertLess(rejected[0]["burnable_share"], 0.25)
+        for f in self.fc["features"]:
+            lon, lat = np.mean(f["geometry"]["coordinates"][0][:4], axis=0)
+            self.assertFalse(abs(lon + 122.3) < 0.02 and abs(lat - 37.7) < 0.02)
+
     def test_burned_area_never_shrinks(self):
         by_h: dict[int, dict[int, float]] = {}
         for f in self.fc["features"]:
@@ -179,7 +191,7 @@ class IngestionTests(unittest.TestCase):
     def test_firms_filters_low_confidence_and_old(self):
         ref = parse_reference_time(FIRE_DAY)
         dets = ni.firms_detections(BBOX, ref, 24)
-        self.assertEqual(len(dets), len(FAKE.fire_points))
+        self.assertEqual(len(dets), len(FAKE.fire_points) + 1)  # + the non-wildland hot spot (rejected later, not here)
         self.assertTrue(np.all(dets.confidence >= 0.8))
         self.assertTrue(np.allclose(dets.radius_m, np.sqrt(0.39 * 0.36 / np.pi) * 1000))
 

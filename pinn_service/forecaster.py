@@ -80,6 +80,49 @@ def cluster_detections(dets: Detections) -> list[np.ndarray]:
     return sorted(groups, key=lambda g: -len(g))
 
 
+NONBURNABLE_LABELS = {91: "urban", 92: "snow/ice", 93: "agriculture", 98: "water", 99: "barren", 0: "no data"}
+RING_M = 500.0
+
+
+def burnable_share(source, lon: np.ndarray, lat: np.ndarray) -> tuple[float, str]:
+    """Share of burnable FBFM40 fuel within RING_M of the given detections, and the dominant non-burnable class."""
+    m_lat, m_lon = metres_per_degree(float(np.mean(lat)))
+    offsets = np.linspace(-RING_M, RING_M, 9)
+    dx, dy = np.meshgrid(offsets, offsets)
+    keep = np.hypot(dx, dy) <= RING_M
+    px = (lon[:, None] + dx[keep][None, :] / m_lon).ravel()
+    py = (lat[:, None] + dy[keep][None, :] / m_lat).ravel()
+    codes = np.rint(np.nan_to_num(source.fuel(px, py), nan=0.0)).astype(int)
+    burnable = ~np.isin(codes, list(NONBURNABLE_LABELS))
+    values, counts = np.unique(codes[~burnable], return_counts=True) if (~burnable).any() else ([0], [0])
+    dominant = NONBURNABLE_LABELS.get(int(values[int(np.argmax(counts))]), "non-burnable")
+    return float(burnable.mean()), dominant
+
+
+def wildland_only(fires: list[np.ndarray], dets: Detections, source, min_share: float) -> tuple[list[np.ndarray], list[dict]]:
+    """Drop detection groups that sit on almost no burnable fuel.
+
+    FIRMS flags anything hot: refinery flares (Richmond, Martinez), power plants and
+    crop-residue burns show up every day. A level-set spread model has nothing to
+    say about them, and the dashboard should not show them as wildfire.
+    """
+    if min_share <= 0:
+        return fires, []
+    kept, rejected = [], []
+    for index in fires:
+        share, dominant = burnable_share(source, dets.lon[index], dets.lat[index])
+        if share >= min_share:
+            kept.append(index)
+        else:
+            rejected.append({
+                "centre_lon_lat": [round(float(dets.lon[index].mean()), 5), round(float(dets.lat[index].mean()), 5)],
+                "detections": int(len(index)),
+                "burnable_share": round(share, 2),
+                "reason": f"{dominant} land, not wildland fuel (likely industrial heat source or {'crop burn' if dominant == 'agriculture' else 'non-vegetation fire'})",
+            })
+    return kept, rejected
+
+
 def forecast(req: PredictionRequest, source, grid: GridSpec) -> tuple[dict[int, dict[int, float]], dict]:
     started = time.perf_counter()
     params = req.additional_params
@@ -87,7 +130,7 @@ def forecast(req: PredictionRequest, source, grid: GridSpec) -> tuple[dict[int, 
     probabilities: dict[int, dict[int, float]] = {h: {} for h in horizons}
     area = search_bbox(req.bbox, params.search_buffer_m)
     dets = source.detections(req, area)
-    fires = cluster_detections(dets)
+    fires, rejected = wildland_only(cluster_detections(dets), dets, source, params.min_burnable_share)
     meta: dict = {
         "forecast_method": (
             "level-set ensemble, physics-only spread rate (LANDFIRE fuel/slope, hourly wind, FM100); "
@@ -97,12 +140,13 @@ def forecast(req: PredictionRequest, source, grid: GridSpec) -> tuple[dict[int, 
         "reference_time": req.reference_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
         "horizons_hours": horizons,
         "fires_detected": len(fires),
+        "detections_rejected": rejected,
         "ensemble_size": params.members,
         "search_bbox": [round(v, 5) for v in area],
         "input_notes": list(dets.notes),
     } | source.describe()
     if not fires:
-        meta["note"] = "no active fire detected in or near the bbox; nothing to forecast"
+        meta["note"] = "no wildland fire detected in or near the bbox; nothing to forecast"
         meta["runtime_s"] = round(time.perf_counter() - started, 3)
         return probabilities, meta
 

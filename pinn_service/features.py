@@ -283,5 +283,8 @@ class NpzSource:
     def environment(self, req, lon0, lat0):
         return NpzEnvironment(self._layers or self._load(req))
 
+    def fuel(self, lon, lat):
+        return self._layers.sample("fuel_fbfm40", lon, lat, fill=0.0)
+
     def describe(self) -> dict:
         return {"ingestion": "npz replay", "feature_dir": os.environ.get("FEATURE_DIR", str(Path(__file__).resolve().parent / "test_features"))}

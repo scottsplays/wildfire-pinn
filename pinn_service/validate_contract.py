@@ -76,7 +76,7 @@ def main() -> int:
     parser.add_argument("path")
     parser.add_argument("--bbox", nargs=4, type=float, default=[-122.9, 36.9, -121.5, 38.3])
     args = parser.parse_args()
-    with open(args.path) as handle:
+    with open(args.path, encoding="utf-8-sig") as handle:  # tolerate the BOM Windows PowerShell adds
         body = json.load(handle)
     collections = body["predictions"] if "predictions" in body else [body]
     failed = False

@@ -6,6 +6,10 @@ Part of a team master's project. This repository is the physics core. The rest o
 
 The frozen Kincade deliverable is WildfirePINN v1, in the next section. `MODEL_CARD.md` is the authority for that checkpoint. Later sections describe the Palisades package trainer and the earlier PDE experiments.
 
+## Inference service for the team dashboard
+
+`pinn_service/` is the PINN's black-box HTTP service for the Fight Fire With AI backend (port 8082, sponsor contract rev 2). It fetches its own inputs (FIRMS, Open-Meteo, gridMET, LANDFIRE) and returns GeoJSON fire-probability cells for horizons 0, 1, 3 and 6 h. The current version is a physics-only level-set ensemble baseline. See `pinn_service/README.md`.
+
 ## WildfirePINN v1
 
 The frozen Kincade model is an observation-only level-set network. It reads normalized easting, northing, and time, and it outputs a signed distance φ. φ < 0 is the predicted burned region and φ = 0 is the predicted perimeter. Weather and the level-set PDE are not inputs to this checkpoint and are not part of its loss.
@@ -118,8 +122,27 @@ The notebook is kept as the original session. The package is the version that ru
 
 Checkpoints now store the network width and depth. A file from the other experiment is refused with an instruction to pass `--retrain`, instead of a raw PyTorch size error.
 
+## Stage 1: 1D heat-equation baseline (validated)
+
+PINN mapping `[x, t] → u`: two 50-unit tanh layers, TensorFlow/Keras, PDE residual via automatic differentiation. 1,000 collocation points, Adam (lr 1e-3), 10,000 epochs.
+
+Key fix: a residual-only loss admits degenerate constant solutions, so the loss includes weighted initial/boundary terms — `Loss = PDE + w·(IC + BC)`.
+
+Validated against the closed-form solution `u(x,t) = sin(πx)·e^(−απ²t)` (α = 0.01):
+
+| IC/BC weight | Relative L2 error |
+| --- | --- |
+| 1× | 0.13% |
+| 10× | 0.23% |
+| 100× | 0.47% |
+
+All runs land under 0.5% error; 100× over-constrains the IC/BC terms at the expense of the PDE residual.
+
+The notebook for this stage is `WildfirePINN.ipynb` (the repository's first commit).
+
 ## Layout
 
+- `pinn_service/` — inference service for the dashboard (see its README)
 - `MODEL_CARD.md` — frozen Kincade v1 checkpoint
 - `HANDOFF.md` — files, install, and the inference command
 - `infer_wildfirepinn_v1.py` — load the frozen checkpoint; one-pass smoke test, then pixel counts

@@ -1,7 +1,10 @@
-"""WildfirePINN inference service (port 8080) for the Fight Fire With AI backend.
+"""WildfirePINN inference service (port 8082) for the Fight Fire With AI backend.
 
-    python pinn_service/serve.py --port 8080          # from the repo root
-    python serve.py --port 8080                       # from inside pinn_service/
+    python pinn_service/serve.py --port 8082          # from the repo root
+    python serve.py --port 8082                       # from inside pinn_service/
+
+Inputs: INGESTION=native (default; FIRMS + Open-Meteo + gridMET + bundled LANDFIRE)
+or INGESTION=npz (offline replay from $FEATURE_DIR/YYYY-MM-DD.npz).
 
 Routes (Vertex AI custom-container compatible):
     GET  /health    -> {"status": "ok", "models_loaded": true}
@@ -27,9 +30,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from pinn_service.contract import MODEL_VERSION, PredictionRequest, ServiceError, unwrap
-from pinn_service.features import load_features
+from pinn_service.contract import DEFAULT_PORT, MODEL_VERSION, PredictionRequest, ServiceError, unwrap
+from pinn_service.features import NpzSource
 from pinn_service.forecaster import forecast
+from pinn_service.native_ingestion import NativeSource
 from pinn_service.postprocessing import active_grid, build_feature_collection
 
 log = logging.getLogger("pinn_service")
@@ -40,22 +44,33 @@ PREDICT_ROUTE = os.environ.get("AIP_PREDICT_ROUTE", "/predict")
 app = FastAPI(title="WildfirePINN inference", version=MODEL_VERSION, docs_url=None, redoc_url=None)
 
 
+def make_source():
+    mode = os.environ.get("INGESTION", "native").lower()
+    if mode == "npz":
+        return NpzSource()
+    if mode == "native":
+        return NativeSource()
+    raise ServiceError(500, f"INGESTION must be 'native' or 'npz', not {mode!r}")
+
+
 def predict_one(instance: dict) -> dict:
     try:
         req = PredictionRequest.model_validate(instance)
     except ValidationError as exc:
         messages = "; ".join(f"{'.'.join(str(p) for p in e['loc']) or 'request'}: {e['msg']}" for e in exc.errors())
         raise ServiceError(422, messages) from exc
-    layers = load_features(req.date)
     grid = active_grid()
-    probabilities, meta = forecast(req, layers, grid)
+    probabilities, meta = forecast(req, make_source(), grid)
+    params = req.additional_params
     return build_feature_collection(
         probabilities,
-        members=req.additional_params.members,
+        ensemble_size=params.members,
         bbox=req.bbox,
         grid=grid,
-        threshold=req.additional_params.confidence_threshold,
+        threshold=params.confidence_threshold,
         extra_metadata=meta,
+        high_risk=params.high_risk,
+        moderate_risk=params.moderate_risk,
     )
 
 
@@ -72,7 +87,11 @@ def handle(payload) -> tuple[int, dict]:
 @app.get(HEALTH_ROUTE)
 def health() -> dict:
     grid = active_grid()
-    return {"status": "ok", "models_loaded": True, "model_version": MODEL_VERSION, "grid": grid.name}
+    try:
+        source = make_source().describe()
+    except ServiceError as exc:
+        source = {"ingestion_error": exc.detail}
+    return {"status": "ok", "models_loaded": True, "model_version": MODEL_VERSION, "grid": grid.name} | source
 
 
 @app.post(PREDICT_ROUTE)
@@ -90,7 +109,7 @@ async def predict(request: Request) -> JSONResponse:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--host", default="0.0.0.0")
-    parser.add_argument("--port", type=int, default=int(os.environ.get("AIP_HTTP_PORT", "8080")))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("AIP_HTTP_PORT", DEFAULT_PORT)))
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
     import uvicorn

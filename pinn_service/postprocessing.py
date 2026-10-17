@@ -6,11 +6,13 @@ Contract rules enforced here (sponsor guide, section C):
   * properties: grid_id (int > 0), fire_probability (0..1), horizon_hours,
     source_model, members
 
-The grid. The backend owns the authoritative ``BayAreaGrid`` table. Until it
-is exported, the service uses a provisional regular grid; point
-``GRID_SPEC`` at a CSV (grid_id,min_lon,min_lat,max_lon,max_lat) or a JSON
-spec to use the backend's real ids. The response metadata says which one
-was used, so nobody mistakes provisional ids for real ones.
+The grid. Sponsor FAQ Q1 (rev 2): any stable California 1 km lattice id is
+accepted; the backend stubs unknown cells from the polygon we send. For the
+ensemble to combine U-Net and PINN cell by cell, both services should use the
+SAME lattice. Until the U-Net's lattice is shared, the service uses a
+provisional California-wide lon/lat lattice (~1 km); point ``GRID_SPEC`` at a
+CSV (grid_id,min_lon,min_lat,max_lon,max_lat) or JSON spec to switch. The
+response metadata says which lattice was used.
 """
 
 from __future__ import annotations
@@ -25,7 +27,9 @@ from pathlib import Path
 
 import numpy as np
 
-from .contract import BAY_AREA_BBOX, MODEL_TYPE, MODEL_VERSION
+from .contract import MODEL_TYPE, MODEL_VERSION
+
+CALIFORNIA_EXTENT = (-124.5, 32.5, -114.0, 42.1)
 
 
 @dataclass(frozen=True)
@@ -73,8 +77,12 @@ class GridSpec:
         return int(self.ids.ravel()[int(flat)])
 
 
-def provisional_grid(bbox=BAY_AREA_BBOX, km: float = 1.0) -> GridSpec:
-    """Regular grid of ~km-sized cells over the Bay Area box; ids row-major from the SW corner, starting at 1."""
+def provisional_grid(bbox=CALIFORNIA_EXTENT, km: float = 1.0) -> GridSpec:
+    """Regular lon/lat lattice of ~km cells over California; ids row-major from the SW corner, starting at 1.
+
+    Cell size is exact (1 km x 1 km) at the extent's middle latitude, 37.3 N, and within 4 % across the
+    Bay Area. The ids depend only on this definition, so they are stable across requests and bboxes.
+    """
     min_lon, min_lat, max_lon, max_lat = bbox
     lat0 = (min_lat + max_lat) / 2
     dlat = km / 111.0
@@ -82,7 +90,7 @@ def provisional_grid(bbox=BAY_AREA_BBOX, km: float = 1.0) -> GridSpec:
     nrows = int(np.ceil((max_lat - min_lat) / dlat))
     ncols = int(np.ceil((max_lon - min_lon) / dlon))
     ids = np.arange(1, nrows * ncols + 1, dtype=np.int64).reshape(nrows, ncols)
-    return GridSpec(min_lon, min_lat, dlon, dlat, ids, f"provisional regular {km:g} km grid", True)
+    return GridSpec(min_lon, min_lat, dlon, dlat, ids, f"provisional California lon/lat lattice ({km:g} km)", True)
 
 
 def grid_from_csv(path: Path) -> GridSpec:
@@ -135,16 +143,34 @@ def _ring(bounds, bbox) -> list[list[float]] | None:
     return [[r(x0), r(y1)], [r(x1), r(y1)], [r(x1), r(y0)], [r(x0), r(y0)], [r(x0), r(y1)]]
 
 
+def risk_label(horizon: int, p: float, high: float, moderate: float) -> str:
+    if horizon == 0:
+        return "ACTIVE_FIRE"
+    if p >= high:
+        return "HIGH_RISK"
+    if p >= moderate:
+        return "MODERATE_RISK"
+    return "LOW_RISK"
+
+
 def build_feature_collection(
     probabilities: dict[int, dict[int, float]],
-    members: int,
+    ensemble_size: int,
     bbox: list[float],
     grid: GridSpec,
     threshold: float,
     extra_metadata: dict,
+    high_risk: float = 0.6,
+    moderate_risk: float = 0.3,
 ) -> dict:
-    """``probabilities[horizon][flat_cell] = p``. Cells with p <= 0 or p < threshold are left out."""
+    """``probabilities[horizon][flat_cell] = p``. Cells with p <= 0 or p < threshold are left out.
+
+    Contract rev 2: ``members`` = 1 for a standalone model that predicts fire in the
+    cell (the adapter counts models when it builds the ensemble). The PINN's own
+    internal ensemble is reported as ``ensemble_votes`` / ``ensemble_size``.
+    """
     features = []
+    clipped = 0
     for horizon in sorted(probabilities):
         for flat, p in sorted(probabilities[horizon].items()):
             p = float(np.clip(p, 0.0, 1.0))
@@ -152,6 +178,7 @@ def build_feature_collection(
                 continue
             ring = _ring(grid.bounds(flat), bbox)
             if ring is None:
+                clipped += 1
                 continue
             features.append({
                 "type": "Feature",
@@ -161,7 +188,10 @@ def build_feature_collection(
                     "fire_probability": round(p, 4),
                     "horizon_hours": int(horizon),
                     "source_model": MODEL_TYPE,
-                    "members": int(members),
+                    "members": 1,
+                    "risk_label": risk_label(horizon, p, high_risk, moderate_risk),
+                    "ensemble_votes": int(round(p * ensemble_size)) if horizon > 0 else ensemble_size,
+                    "ensemble_size": int(ensemble_size),
                 },
             })
     metadata = {
@@ -172,6 +202,7 @@ def build_feature_collection(
         "total_cells": len(features),
         "grid": grid.name,
         "grid_ids_provisional": grid.provisional,
+        "cells_outside_bbox_dropped": clipped,
     }
     metadata.update(extra_metadata)
     return {"type": "FeatureCollection", "metadata": metadata, "features": features}

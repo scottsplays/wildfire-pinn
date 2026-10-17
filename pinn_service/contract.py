@@ -1,7 +1,8 @@
 """Request contract shared with the backend FastAPI ML Adapter.
 
 Mirrors 'Fight Fire With AI - AI/ML Model Local Integration' (sponsor guide,
-Oct 2026): raw JSON or Vertex AI ``{"instances": [...]}``.
+revision 2, Oct 16 2026): raw JSON or Vertex AI ``{"instances": [...]}``,
+PINN served on port 8082, inputs ingested natively by the service.
 """
 
 from __future__ import annotations
@@ -13,7 +14,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 SUPPORTED_HORIZONS = (0, 1, 3, 6)
 MODEL_TYPE = "pinn"
-MODEL_VERSION = "0.1.0-physics-baseline"
+MODEL_VERSION = "0.2.0-physics-baseline"
+DEFAULT_PORT = 8082
+DEFAULT_HOUR_UTC = 21          # sponsor FAQ Q2: date-only requests mean 21:00 UTC
 BAY_AREA_BBOX = (-122.9, 36.9, -121.5, 38.3)
 
 
@@ -30,12 +33,17 @@ class AdditionalParams(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     confidence_threshold: float = Field(0.0, ge=0.0, le=1.0)
-    members: int = Field(10, ge=1, le=32)
+    hour: int | None = Field(None, ge=0, le=23, description="UTC hour; overrides the time in `date`")
+    members: int = Field(10, ge=1, le=32, description="internal ensemble size (not the contract's `members`)")
+    lookback_hours: float = Field(24.0, gt=0.0, le=120.0, description="FIRMS detections this far before the reference time form the current fire")
+    search_buffer_m: float = Field(5000.0, ge=0.0, le=50000.0, description="look for the fire this far outside the bbox")
     fire_threshold: float = Field(0.5, gt=0.0, le=1.0)
     resolution_m: float = Field(90.0, ge=30.0, le=1000.0)
     margin_m: float = Field(6000.0, ge=1000.0, le=30000.0)
     rate_log_sigma: float = Field(0.5, ge=0.0, le=2.0)
     wind_dir_sigma_deg: float = Field(20.0, ge=0.0, le=90.0)
+    high_risk: float = Field(0.6, ge=0.0, le=1.0)
+    moderate_risk: float = Field(0.3, ge=0.0, le=1.0)
     seed: int | None = None
 
 
@@ -76,23 +84,51 @@ class PredictionRequest(BaseModel):
     @field_validator("date")
     @classmethod
     def _date(cls, value: str) -> str:
-        text = value.strip()
-        try:
-            return dt.date.fromisoformat(text[:10]).isoformat()
-        except ValueError as exc:
-            raise ValueError("date must be ISO-8601, e.g. 2026-10-16") from exc
+        parse_reference_time(value)  # raises ValueError on garbage
+        return value.strip()
 
     @model_validator(mode="after")
     def _only_pinn(self) -> "PredictionRequest":
         if self.model_type != MODEL_TYPE:
             raise ValueError(
-                f"this container serves model_type 'pinn' only; got '{self.model_type}'"
+                f"this service serves model_type 'pinn' only; got '{self.model_type}' "
+                "(the adapter routes unet to :8081)"
             )
         return self
 
     @property
     def horizons(self) -> list[int]:
         return [h for h in SUPPORTED_HORIZONS if h <= self.time_horizon]
+
+    @property
+    def reference_time(self) -> dt.datetime:
+        """Forecast start (horizon 0) in UTC."""
+        ref = parse_reference_time(self.date)
+        if self.additional_params.hour is not None:
+            ref = ref.replace(hour=self.additional_params.hour, minute=0, second=0, microsecond=0)
+        return ref
+
+    @property
+    def day(self) -> str:
+        return self.reference_time.date().isoformat()
+
+
+def parse_reference_time(text: str) -> dt.datetime:
+    """'2026-10-16' -> 2026-10-16T21:00Z; '2026-10-16T18:30:00Z' (or +hh:mm) -> that instant in UTC."""
+    text = text.strip()
+    if len(text) <= 10:
+        try:
+            day = dt.date.fromisoformat(text)
+        except ValueError as exc:
+            raise ValueError("date must be ISO-8601, e.g. 2026-10-16 or 2026-10-16T21:00:00Z") from exc
+        return dt.datetime(day.year, day.month, day.day, DEFAULT_HOUR_UTC, tzinfo=dt.timezone.utc)
+    try:
+        moment = dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("date must be ISO-8601, e.g. 2026-10-16 or 2026-10-16T21:00:00Z") from exc
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=dt.timezone.utc)
+    return moment.astimezone(dt.timezone.utc)
 
 
 def unwrap(payload: Any) -> tuple[list[dict], bool]:

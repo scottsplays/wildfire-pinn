@@ -1,10 +1,13 @@
 """Write SYNTHETIC daily feature files for local integration tests.
 
-    python pinn_service/make_test_features.py            # writes test_features/2026-10-16.npz and 2026-10-17.npz
+    python pinn_service/make_test_features.py
 
-2026-10-16: one synthetic fire in the Santa Cruz Mountains (near the 2020 CZU
-            footprint), NW wind 7 m/s, dry fuels.
-2026-10-17: no fire anywhere in the box (the common case).
+Writes to pinn_service/test_features/:
+  2026-10-16.npz      replay file: one synthetic fire in the Santa Cruz Mountains
+                      (near the 2020 CZU footprint), NW wind 7 m/s, dry fuels
+  2026-10-17.npz      replay file: no fire anywhere in the box (the common case)
+  static_synthetic.npz  synthetic fuel + slope in the static-layer format, so the
+                      native-ingestion path can be tested without LANDFIRE
 
 Every value is made up. These files exercise the code path and the contract;
 they say nothing about real fire behaviour.
@@ -76,6 +79,15 @@ def main() -> None:
     out.mkdir(exist_ok=True)
     np.savez_compressed(out / "2026-10-16.npz", **build(fire=True))
     np.savez_compressed(out / "2026-10-17.npz", **build(fire=False))
+    import sys
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # allow running as a plain script
+    from pinn_service.features import _slope_from_elevation
+
+    day = build(fire=False)
+    slope = _slope_from_elevation(day["elevation_m"].astype(float), day["lat"], day["lon"]).astype(np.float32)
+    np.savez_compressed(out / "static_synthetic.npz", lat=day["lat"], lon=day["lon"],
+                        fuel_fbfm40=day["fuel_fbfm40"], slope_deg=slope, synthetic=np.array(True))
     print(f"wrote synthetic feature files to {out}")
 
 

@@ -1,65 +1,67 @@
-# WildfirePINN inference service (`model_type: "pinn"`)
+# WildfirePINN inference service (`model_type: "pinn"`, port 8082)
 
-This is the ML inference engine for the PINN, built to the sponsor's integration guide (Oct 2026). It runs on port 8080, takes the same requests locally and on Vertex AI, and returns one GeoJSON FeatureCollection of 1 km Bay Area cells with `fire_probability` for horizons 0, 1, 3 and 6 h.
+This is the PINN's black-box service for the Fight Fire With AI backend, built to the sponsor's integration guide (rev 2, Oct 16 2026). The ML adapter on :8001 routes `model_type="pinn"` here. The service fetches its own inputs (native ingestion) and returns one GeoJSON FeatureCollection of ~1 km cells with `fire_probability` for horizons 0, 1, 3 and 6 h.
 
-> **Research prototype, not an operational forecast.** Version `0.1.0-physics-baseline` uses the physics-only spread rate. The learned PINN correction (plan weeks 3–5) replaces the rate later without changing this contract. Every response says so in `metadata.forecast_method`.
+> **Research prototype, not an operational forecast.** Version `0.2.0-physics-baseline` uses the physics-only spread rate. The learned PINN correction (plan weeks 3–5) replaces the rate later without changing this contract. Every response says so in `metadata.forecast_method`.
 
-## Run it locally
+## Run it locally (Windows PowerShell shown; bash is the same)
 
-```bash
-pip install -r pinn_service/requirements.txt
-python pinn_service/make_test_features.py          # synthetic fire day 2026-10-16 + quiet day 2026-10-17
-python pinn_service/serve.py --port 8080           # or: cd pinn_service && python serve.py --port 8080
+```powershell
+pip install -r pinn_service/requirements.txt rasterio
+python -m pinn_service.build_static_layers            # once: LANDFIRE fuel + slope -> pinn_service/static/bay_area_static.npz
+$env:FIRMS_MAP_KEY = (Get-Content firms_key.txt)      # or leave firms_key.txt in the repo root
+python -m pinn_service.native_ingestion --smoke       # checks FIRMS, Open-Meteo, gridMET and the static file
+python pinn_service/serve.py                          # http://localhost:8082
 ```
 
-```bash
-curl localhost:8080/health
-curl -X POST localhost:8080/predict -H "Content-Type: application/json" \
-  -d '{"bbox":[-122.9,36.9,-121.5,38.3],"time_horizon":6,"model_type":"pinn","date":"2026-10-16"}' > response.json
-python pinn_service/validate_contract.py response.json
+```powershell
+Invoke-RestMethod localhost:8082/health
+Invoke-RestMethod localhost:8082/predict -Method Post -ContentType "application/json" `
+  -Body '{"bbox":[-122.9,36.9,-121.5,38.3],"time_horizon":6,"model_type":"pinn","date":"2026-10-16"}'
 ```
 
-PowerShell: `Invoke-RestMethod localhost:8080/predict -Method Post -ContentType "application/json" -Body '{"bbox":[-122.9,36.9,-121.5,38.3],"time_horizon":6,"model_type":"pinn","date":"2026-10-16"}'`
+There is no network or key in replay mode: `python pinn_service/make_test_features.py`, then `$env:INGESTION="npz"` and run with `"date":"2026-10-16"`. That date is a synthetic fire in the Santa Cruz Mountains.
 
-Docker (from the repo root): `docker build -f pinn_service/Dockerfile -t wildfirepinn-inference:0.1.0 .` then `docker run --rm -p 8080:8080 wildfirepinn-inference:0.1.0`.
-
-Tests (from the repo root): `python -m unittest pinn_service.tests.test_service -v`
+Tests (repo root, no network needed): `python -m unittest pinn_service.tests.test_service -v`
+Check any response file against the contract: `python pinn_service/validate_contract.py response.json`
+Docker: see the header of `Dockerfile` (pass the FIRMS key with `-e`, never bake it in).
 
 ## What happens on a request
 
-1. The request is validated: bbox in lon/lat, `time_horizon` 0–6, `model_type` must be `pinn`, ISO date. Vertex `{"instances": [...]}` bodies get `{"predictions": [...]}` back.
-2. The daily feature file is loaded (`feature_spec.md`). On a day with no `active_fire` pixel in the bbox, the response is an empty FeatureCollection (HTTP 200) with `fires_detected: 0`.
-3. Each fire gets its own 90 m grid (fire + 6 km margin, widened automatically if the front reaches the edge). The spread rate R comes from fuel, slope, wind and 100-h moisture, using the same formula as `wildfire_pinn/data_pipeline.py`.
-4. An ensemble of N members (default 10) runs the level-set equation `phi_t + R(1 + 0.6 n·w)₊|∇phi| = 0` forward to 1, 3 and 6 h. Member 0 is unperturbed; the others scale R and rotate the wind randomly. The seed is fixed per date and bbox, so repeat calls give identical answers.
-5. A 1 km cell's `fire_probability` is the share of members that burn any part of it, and `members` = N. Horizon 0 is the observed fire (probability = detection confidence). Polygons are clamped to the bbox.
+1. **Validate.** The bbox is lon/lat, `time_horizon` is 0–6 and `model_type` must be `pinn`. `date` is either a date or an ISO timestamp; a bare date means **21:00 UTC** (sponsor FAQ Q2), and `additional_params.hour` overrides the hour. Vertex `{"instances": [...]}` bodies get `{"predictions": [...]}` back.
+2. **Find the fire.** FIRMS VIIRS detections (S-NPP, NOAA-20, NOAA-21; nominal and high confidence) from the last 24 h, searched in the bbox **plus a 5 km buffer**. The backend may send a single 1 km cell, and a spread forecast needs the whole fire around it. Detections within 2 km form one fire. No detections means an empty FeatureCollection with HTTP 200.
+3. **Inputs per fire.** LANDFIRE fuel (FBFM40) and slope come from the bundled static file. Hourly 10 m wind, RH and temperature come from Open-Meteo at the fire centre. 100-h fuel moisture comes from gridMET; if gridMET is down, it falls back to an estimate from the last 24 h of RH/T. The spread rate R per hour uses the same formula as `wildfire_pinn/data_pipeline.py`.
+4. **Ensemble forecast.** Each fire gets a 90 m grid (fire + 6 km margin, widened automatically if the front reaches the edge). Ten members advance `phi_t + R(1 + 0.6 n·w)₊|∇phi| = 0` hour by hour with that hour's wind. Member 0 is unperturbed; the others scale R and rotate the wind randomly. Seeds are fixed per reference time, so repeat calls give identical answers.
+5. **Output.** A cell's `fire_probability` is the share of members that burn any part of it; horizon 0 is the detected fire (probability = detection confidence). Polygons are clamped to the request bbox, and `metadata.cells_outside_bbox_dropped` counts what was cut. Per contract rev 2, `members` is 1. The internal ensemble is reported as `ensemble_votes` / `ensemble_size`. `risk_label` is `ACTIVE_FIRE` at horizon 0, otherwise `HIGH_RISK` (≥ 0.6), `MODERATE_RISK` (≥ 0.3) or `LOW_RISK`.
 
 ## `additional_params`
 
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `confidence_threshold` | 0.0 | Leave out cells below this probability (cells at 0 are never sent) |
-| `members` | 10 | Ensemble size, 1–32 |
-| `fire_threshold` | 0.5 | `active_fire` value counted as burning |
-| `resolution_m` | 90 | Forecast grid spacing (coarsened automatically for very large fires) |
-| `margin_m` | 6000 | Initial window margin around each fire |
-| `rate_log_sigma` | 0.5 | Spread of the R multiplier across members (log scale) |
-| `wind_dir_sigma_deg` | 20 | Spread of the wind direction across members |
-| `seed` | from date + bbox | Fix for reproducible experiments |
+| `hour` | from `date` | UTC hour of the reference time |
+| `lookback_hours` | 24 | FIRMS detections this far back form the current fire |
+| `search_buffer_m` | 5000 | Look for the fire this far outside the bbox |
+| `members` | 10 | Internal ensemble size, 1–32 |
+| `resolution_m` / `margin_m` | 90 / 6000 | Forecast grid spacing / initial window margin |
+| `rate_log_sigma` / `wind_dir_sigma_deg` | 0.5 / 20 | Ensemble spread of R (log scale) and of wind direction |
+| `high_risk` / `moderate_risk` | 0.6 / 0.3 | `risk_label` thresholds |
+| `seed` | from reference time | Fix for reproducible experiments |
 
 ## Environment
 
 | Variable | Default | Use |
 | --- | --- | --- |
-| `FEATURE_SOURCE` | `local` | `gcs` in production |
-| `FEATURE_DIR` | `pinn_service/test_features` | Local `.npz` folder |
-| `FEATURE_GCS_TEMPLATE` | `gs://fightfirewai-features/daily/{date}.npz` | Production path |
-| `STATIC_LAYERS` | unset | `.npz` with fine-resolution `fuel_fbfm40` / `slope_deg` |
-| `GRID_SPEC` | unset → provisional grid | Backend `BayAreaGrid` export: CSV `grid_id,min_lon,min_lat,max_lon,max_lat`, or JSON |
-| `AIP_HTTP_PORT`, `AIP_HEALTH_ROUTE`, `AIP_PREDICT_ROUTE` | 8080, `/health`, `/predict` | Set by Vertex AI |
+| `FIRMS_MAP_KEY` | `firms_key.txt` | NASA FIRMS map key (secret) |
+| `INGESTION` | `native` | `npz` = offline replay from `$FEATURE_DIR/YYYY-MM-DD.npz` |
+| `STATIC_LAYERS` | `pinn_service/static/bay_area_static.npz` | Fuel/slope file from `build_static_layers.py` |
+| `GRID_SPEC` | unset → provisional CA lattice | Shared lattice: CSV `grid_id,min_lon,min_lat,max_lon,max_lat`, or JSON |
+| `AIP_HTTP_PORT`, `AIP_HEALTH_ROUTE`, `AIP_PREDICT_ROUTE` | 8082, `/health`, `/predict` | Set by Vertex AI |
 
 ## Known gaps (tracked in the plan doc)
 
-- **grid_id values are provisional** (`metadata.grid_ids_provisional: true`) until the backend exports `BayAreaGrid`; then set `GRID_SPEC`.
-- The physics-only rate is uncalibrated and has no real-fire evaluation yet. Treat the probabilities as a spread envelope, not a calibrated likelihood.
-- The local flat-earth projection is accurate to well under one 90 m cell across a fire window (tens of km). It is not meant for state-wide windows.
-- The sponsor's example feature channels have no fuel or moisture. Without them the service returns 422 and names the missing channels.
+- **Lattice.** grid_ids come from a provisional California lon/lat lattice. For the ensemble to combine U-Net and PINN cell by cell, adopt the U-Net's lattice through `GRID_SPEC`.
+- **Clipping.** Clamping to a 1 km request bbox throws away most of a 6 h spread forecast (see `cells_outside_bbox_dropped`). This needs a decision with the backend.
+- **Weather.** Weather is taken at one point per fire, which is fine for windows of tens of km. Open-Meteo is a free public API; for production, check its terms and rate limits or move to NOAA HRRR.
+- **Static coverage.** The static layers cover the Bay Area (+ ~25 km). Fires elsewhere get no fuel data and a warning. Rebuild with a larger `--bbox` for wider coverage.
+- **Validation.** The physics-only rate is uncalibrated and not yet evaluated on real fires. Treat probabilities as a spread envelope, not a calibrated likelihood.

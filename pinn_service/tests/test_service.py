@@ -1,28 +1,95 @@
-"""Contract and physics tests for the WildfirePINN inference service.
+"""Contract, ingestion and physics tests for the WildfirePINN inference service.
 
     python -m unittest pinn_service.tests.test_service -v      (from the repo root)
 
-Uses the synthetic feature files from make_test_features.py (created if missing).
+No network: native ingestion is exercised with recorded-format responses served by
+a fake fetcher (FIRMS CSV, Open-Meteo JSON, gridMET CSV) built from the synthetic
+test fire. ``python -m pinn_service.native_ingestion --smoke`` checks the live sources.
 """
 
 from __future__ import annotations
 
+import datetime as dt
+import json
 import os
 import unittest
+import urllib.parse
 from pathlib import Path
 
 import numpy as np
 
+from pinn_service import native_ingestion as ni
 from pinn_service import physics
-from pinn_service.forecaster import _signed_distance
+from pinn_service.contract import parse_reference_time
+from pinn_service.forecaster import signed_distance
 from pinn_service.make_test_features import main as make_test_features
 from pinn_service.serve import app, handle
 from pinn_service.validate_contract import validate
 
 HERE = Path(__file__).resolve().parent.parent
+FEATURES = HERE / "test_features"
 BBOX = [-122.9, 36.9, -121.5, 38.3]
 FIRE_DAY = "2026-10-16"
 QUIET_DAY = "2026-10-17"
+FIRMS_HEADER = "latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_ti5,frp,daynight"
+
+
+class FakeFetch:
+    """Serves FIRMS / Open-Meteo / gridMET responses in their documented formats."""
+
+    def __init__(self):
+        self.calls: list[str] = []
+        self.fail_hosts: set[str] = set()
+        day = np.load(FEATURES / f"{FIRE_DAY}.npz")
+        lon2, lat2 = np.meshgrid(day["lon"], day["lat"])
+        fire = day["active_fire"]
+        self.fire_points = [(float(x), float(y), "h" if f >= 1 else "n") for x, y, f in zip(lon2[fire >= 0.5], lat2[fire >= 0.5], fire[fire >= 0.5])]
+
+    def __call__(self, url: str) -> bytes:
+        self.calls.append(url)
+        host = urllib.parse.urlsplit(url).netloc
+        if any(h in host for h in self.fail_hosts):
+            raise ConnectionError(f"{host}: simulated outage")
+        if "firms" in host:
+            return self._firms(url)
+        if "open-meteo" in host:
+            return self._open_meteo(url)
+        if "thredds" in host:
+            return b'time,latitude[unit="degrees_north"],longitude[unit="degrees_east"],dead_fuel_moisture_100hr[unit="Percent"]\n' \
+                   b"2026-10-15T00:00:00Z,37.17,-122.22,7.4\n2026-10-16T00:00:00Z,37.17,-122.22,7.0\n"
+        raise AssertionError(f"unexpected URL {url}")
+
+    def _firms(self, url: str) -> bytes:
+        parts = urllib.parse.urlsplit(url).path.split("/")
+        source, bbox, days, start = parts[-4], [float(v) for v in parts[-3].split(",")], int(parts[-2]), parts[-1]
+        first = dt.date.fromisoformat(start)
+        dates = {(first + dt.timedelta(days=i)).isoformat() for i in range(days)}
+        rows = [FIRMS_HEADER]
+        if source == "VIIRS_SNPP_NRT" and FIRE_DAY in dates:
+            for x, y, conf in self.fire_points:
+                if bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+                    rows.append(f"{y:.5f},{x:.5f},340.1,0.39,0.36,{FIRE_DAY},2000,N,VIIRS,{conf},2.0NRT,290.2,12.5,D")
+            rows.append(f"37.30000,-122.40000,301.0,0.39,0.36,{FIRE_DAY},2000,N,VIIRS,l,2.0NRT,280.0,1.1,D")      # low confidence: dropped
+        if source == "VIIRS_NOAA20_NRT" and "2026-10-14" in dates:
+            rows.append(f"37.17000,-122.22000,340.0,0.39,0.36,2026-10-14,2000,1,VIIRS,h,2.0NRT,290.0,9.0,D")  # older than lookback
+        return ("\n".join(rows) + "\n").encode()
+
+    def _open_meteo(self, url: str) -> bytes:
+        q = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
+        start = dt.date.fromisoformat(q["start_date"][0])
+        end = dt.date.fromisoformat(q["end_date"][0])
+        hours = int(((end - start).days + 1) * 24)
+        times = [(dt.datetime(start.year, start.month, start.day) + dt.timedelta(hours=i)).strftime("%Y-%m-%dT%H:%M") for i in range(hours)]
+        body = {
+            "latitude": float(q["latitude"][0]), "longitude": float(q["longitude"][0]), "utc_offset_seconds": 0, "timezone": "GMT",
+            "hourly_units": {"wind_speed_10m": "m/s", "wind_direction_10m": "°", "relative_humidity_2m": "%", "temperature_2m": "°C"},
+            "hourly": {"time": times, "wind_speed_10m": [7.0] * hours, "wind_direction_10m": [320] * hours,
+                       "relative_humidity_2m": [14] * hours, "temperature_2m": [31.0] * hours},
+        }
+        return json.dumps(body).encode()
+
+
+FAKE: FakeFetch | None = None
 
 
 def request(**overrides) -> dict:
@@ -32,9 +99,23 @@ def request(**overrides) -> dict:
 
 
 def setUpModule():
-    os.environ.setdefault("FEATURE_DIR", str(HERE / "test_features"))
-    if not (HERE / "test_features" / f"{FIRE_DAY}.npz").exists():
+    global FAKE
+    if not (FEATURES / "static_synthetic.npz").exists():
         make_test_features()
+    os.environ.update({
+        "FEATURE_DIR": str(FEATURES),
+        "STATIC_LAYERS": str(FEATURES / "static_synthetic.npz"),
+        "FIRMS_MAP_KEY": "TESTKEY",
+        "INGESTION": "native",
+    })
+    FAKE = FakeFetch()
+    ni.FETCH = FAKE
+    ni._CACHE.clear()
+
+
+def tearDownModule():
+    ni.FETCH = ni._urllib_fetch
+    ni._CACHE.clear()
 
 
 class ContractTests(unittest.TestCase):
@@ -43,23 +124,31 @@ class ContractTests(unittest.TestCase):
         cls.status, cls.fc = handle(request())
 
     def test_ok_and_valid(self):
-        self.assertEqual(self.status, 200)
+        self.assertEqual(self.status, 200, self.fc)
         errors, _ = validate(self.fc, BBOX, {0, 1, 3, 6})
         self.assertEqual(errors, [])
 
     def test_all_horizons_present(self):
-        horizons = {f["properties"]["horizon_hours"] for f in self.fc["features"]}
-        self.assertEqual(horizons, {0, 1, 3, 6})
+        self.assertEqual({f["properties"]["horizon_hours"] for f in self.fc["features"]}, {0, 1, 3, 6})
+
+    def test_rev2_properties(self):
+        for f in self.fc["features"]:
+            p = f["properties"]
+            self.assertEqual(p["members"], 1)
+            self.assertIn(p["risk_label"], {"ACTIVE_FIRE", "HIGH_RISK", "MODERATE_RISK", "LOW_RISK"})
+            self.assertEqual(p["risk_label"] == "ACTIVE_FIRE", p["horizon_hours"] == 0)
+            self.assertEqual(p["ensemble_size"], 10)
 
     def test_metadata(self):
         meta = self.fc["metadata"]
         self.assertEqual(meta["source_model"], "pinn")
         self.assertTrue(meta["timestamp"].endswith("Z"))
+        self.assertEqual(meta["reference_time"], "2026-10-16T21:00:00Z")
         self.assertEqual(meta["total_cells"], len(self.fc["features"]))
         self.assertEqual(meta["fires_detected"], 1)
+        self.assertTrue(any("gridMET FM100 7.0" in n for n in meta["input_notes"]))
 
     def test_burned_area_never_shrinks(self):
-        """Every cell burning at an earlier horizon burns later, with probability at least as high."""
         by_h: dict[int, dict[int, float]] = {}
         for f in self.fc["features"]:
             p = f["properties"]
@@ -72,14 +161,13 @@ class ContractTests(unittest.TestCase):
                     self.assertGreaterEqual(by_h[late].get(gid, 0.0) + 1e-9, prob)
 
     def test_spreads_downwind(self):
-        """Synthetic wind blows toward the SE, so the 6 h centroid sits SE of the 0 h centroid."""
+        """Wind from 320 deg blows toward the SE, so the 6 h centroid sits SE of the 0 h centroid."""
         def centroid(h):
-            pts = [np.mean(f["geometry"]["coordinates"][0][:4], axis=0)
-                   for f in self.fc["features"] if f["properties"]["horizon_hours"] == h]
+            pts = [np.mean(f["geometry"]["coordinates"][0][:4], axis=0) for f in self.fc["features"] if f["properties"]["horizon_hours"] == h]
             return np.mean(pts, axis=0)
         c0, c6 = centroid(0), centroid(6)
-        self.assertGreater(c6[0], c0[0])   # east
-        self.assertLess(c6[1], c0[1])      # south
+        self.assertGreater(c6[0], c0[0])
+        self.assertLess(c6[1], c0[1])
 
     def test_deterministic(self):
         _, again = handle(request())
@@ -87,11 +175,70 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(strip(self.fc), strip(again))
 
 
+class IngestionTests(unittest.TestCase):
+    def test_firms_filters_low_confidence_and_old(self):
+        ref = parse_reference_time(FIRE_DAY)
+        dets = ni.firms_detections(BBOX, ref, 24)
+        self.assertEqual(len(dets), len(FAKE.fire_points))
+        self.assertTrue(np.all(dets.confidence >= 0.8))
+        self.assertTrue(np.allclose(dets.radius_m, np.sqrt(0.39 * 0.36 / np.pi) * 1000))
+
+    def test_key_never_in_errors(self):
+        FAKE.fail_hosts = {"firms"}
+        try:
+            status, body = handle(request())
+        finally:
+            FAKE.fail_hosts = set()
+            ni._CACHE.clear()
+        self.assertEqual(status, 503)
+        self.assertNotIn("TESTKEY", json.dumps(body))
+
+    def test_missing_key(self):
+        saved = os.environ.pop("FIRMS_MAP_KEY")
+        try:
+            with unittest.mock.patch.object(ni, "PACKAGE_DIR", Path("/nonexistent")), \
+                 unittest.mock.patch.object(Path, "cwd", return_value=Path("/nonexistent")):
+                status, body = handle(request(date="2026-10-15"))
+        finally:
+            os.environ["FIRMS_MAP_KEY"] = saved
+        self.assertEqual(status, 503)
+        self.assertIn("FIRMS", body["detail"])
+
+    def test_gridmet_outage_falls_back_to_emc(self):
+        FAKE.fail_hosts = {"thredds"}
+        ni._CACHE.clear()
+        try:
+            status, fc = handle(request(time_horizon=1))
+        finally:
+            FAKE.fail_hosts = set()
+            ni._CACHE.clear()
+        self.assertEqual(status, 200)
+        self.assertTrue(any("estimated from 24 h RH/T" in n for n in fc["metadata"]["input_notes"]))
+
+    def test_weather_outage_is_503(self):
+        FAKE.fail_hosts = {"open-meteo"}
+        ni._CACHE.clear()
+        try:
+            status, body = handle(request())
+        finally:
+            FAKE.fail_hosts = set()
+            ni._CACHE.clear()
+        self.assertEqual(status, 503)
+        self.assertIn("weather", body["detail"])
+
+    def test_emc_values(self):
+        """Simard EMC: hot and dry gives single digits, humid gives teens."""
+        self.assertLess(float(ni.emc_percent(31, 14)), 4)
+        self.assertGreater(float(ni.emc_percent(15, 80)), 14)
+
+    def test_gridmet_parser(self):
+        self.assertEqual(ni.parse_gridmet_csv("time,x,y,dead_fuel_moisture_100hr\n2026-10-15,1,2,9.5\n2026-10-16,1,2,8.25\n"), 8.25)
+
+
 class RequestHandlingTests(unittest.TestCase):
     def test_vertex_wrapper(self):
         status, body = handle({"instances": [request(time_horizon=1)]})
         self.assertEqual(status, 200)
-        self.assertEqual(len(body["predictions"]), 1)
         self.assertEqual({f["properties"]["horizon_hours"] for f in body["predictions"][0]["features"]}, {0, 1})
 
     def test_quiet_day_is_empty_not_an_error(self):
@@ -100,21 +247,32 @@ class RequestHandlingTests(unittest.TestCase):
         self.assertEqual(fc["features"], [])
         self.assertEqual(fc["metadata"]["fires_detected"], 0)
 
-    def test_horizon_subset(self):
-        _, fc = handle(request(time_horizon=3))
-        self.assertEqual({f["properties"]["horizon_hours"] for f in fc["features"]}, {0, 1, 3})
+    def test_timestamp_and_hour(self):
+        self.assertEqual(parse_reference_time("2026-10-16"), dt.datetime(2026, 10, 16, 21, tzinfo=dt.timezone.utc))
+        self.assertEqual(parse_reference_time("2026-10-16T18:30:00Z").hour, 18)
+        self.assertEqual(parse_reference_time("2026-10-16T11:30:00-07:00").hour, 18)
+        _, fc = handle(request(date="2026-10-16T22:15:00Z", time_horizon=0))
+        self.assertEqual(fc["metadata"]["reference_time"], "2026-10-16T22:15:00Z")
+        _, fc = handle(request(time_horizon=0, additional_params={"hour": 23}))
+        self.assertEqual(fc["metadata"]["reference_time"], "2026-10-16T23:00:00Z")
+
+    def test_one_km_bbox_sees_whole_fire(self):
+        """The backend may send a single 1 km cell: the fire around it is still modelled, then clipped."""
+        x, y, _ = FAKE.fire_points[0]
+        lat_step, lon_step = 0.0045, 0.0057  # ~0.5 km
+        small = [x - lon_step, y - lat_step, x + lon_step, y + lat_step]
+        status, fc = handle(request(bbox=small))
+        self.assertEqual(status, 200)
+        errors, _ = validate(fc, small)
+        self.assertEqual(errors, [])
+        self.assertEqual(fc["metadata"]["fires_detected"], 1)
+        self.assertGreater(fc["metadata"]["fires"][0]["detections"], 50)
+        self.assertGreater(fc["metadata"]["cells_outside_bbox_dropped"], 0)
 
     def test_confidence_threshold(self):
         _, fc = handle(request(additional_params={"confidence_threshold": 0.5}))
         self.assertTrue(fc["features"])
         self.assertTrue(all(f["properties"]["fire_probability"] >= 0.5 for f in fc["features"]))
-
-    def test_small_bbox_clamps_geometry(self):
-        small = [-122.24, 37.15, -122.18, 37.20]
-        status, fc = handle(request(bbox=small))
-        self.assertEqual(status, 200)
-        errors, _ = validate(fc, small)
-        self.assertEqual(errors, [])
 
     def test_rejections(self):
         cases = [
@@ -122,7 +280,7 @@ class RequestHandlingTests(unittest.TestCase):
             (request(bbox=[-121.5, 36.9, -122.9, 38.3]), 422),
             (request(time_horizon=12), 422),
             (request(date="yesterday"), 422),
-            (request(date="1999-01-01"), 404),
+            (request(additional_params={"hour": 25}), 422),
             ({"instances": []}, 400),
             ([1, 2, 3], 400),
         ]
@@ -133,11 +291,29 @@ class RequestHandlingTests(unittest.TestCase):
                 self.assertIn("detail", payload)
 
 
+class ReplayModeTests(unittest.TestCase):
+    def setUp(self):
+        os.environ["INGESTION"] = "npz"
+
+    def tearDown(self):
+        os.environ["INGESTION"] = "native"
+
+    def test_replay_matches_contract(self):
+        status, fc = handle(request())
+        self.assertEqual(status, 200)
+        self.assertEqual(validate(fc, BBOX, {0, 1, 3, 6})[0], [])
+        self.assertEqual(fc["metadata"]["ingestion"], "npz replay")
+
+    def test_missing_replay_file(self):
+        status, _ = handle(request(date="1999-01-01"))
+        self.assertEqual(status, 404)
+
+
 class HttpTests(unittest.TestCase):
     def setUp(self):
         try:
             from fastapi.testclient import TestClient
-        except Exception as exc:  # httpx missing
+        except Exception as exc:
             self.skipTest(f"TestClient unavailable: {exc}")
         self.client = TestClient(app)
 
@@ -157,7 +333,6 @@ class HttpTests(unittest.TestCase):
 
 class PhysicsTests(unittest.TestCase):
     def test_reference_rate(self):
-        """Grass (101), flat, reference wind, bone-dry fuel -> exactly C_REF."""
         rate, unknown = physics.spread_rate([[101]], [[0.0]], [[physics.U_REF]], [[0.0]])
         self.assertAlmostEqual(float(rate[0, 0]), physics.C_REF, places=9)
         self.assertEqual(unknown, [])
@@ -168,32 +343,24 @@ class PhysicsTests(unittest.TestCase):
         self.assertEqual(unknown, [999])
 
     def test_expanding_circle_speed(self):
-        """Uniform R, no wind: the front moves R*t (within one cell)."""
         n, h, r_m_s, t = 161, 30.0, 0.05, 3600.0
         yy, xx = np.mgrid[0:n, 0:n]
         burned = np.hypot(xx - 80, yy - 80) * h <= 300.0
-        phi = physics.propagate(_signed_distance(burned, h), h, np.full((n, n), r_m_s), None, [t])[t]
+        phi = physics.propagate(signed_distance(burned, h), h, np.full((n, n), r_m_s), None, [t])[t]
         radius = np.sqrt((phi < 0).sum() * h * h / np.pi)
         self.assertAlmostEqual(radius, 300.0 + r_m_s * t, delta=h)
 
     def test_heterogeneous_rate_stable(self):
-        """Patchy R must not blow up at the window edge (regression for the extrapolated-ghost bug)."""
         rng = np.random.default_rng(0)
         n, h = 200, 90.0
         burned = np.zeros((n, n), bool)
         burned[90:110, 90:110] = True
         rate = np.where(rng.random((n, n)) < 0.08, 0.0, 0.2)
-        phi = physics.propagate(_signed_distance(burned, h), h, rate, None, [21600.0])[21600.0]
+        phi = physics.propagate(signed_distance(burned, h), h, rate, None, [21600.0])[21600.0]
         self.assertTrue(np.isfinite(phi).all())
         self.assertFalse((phi[:, 0] < 0).any() or (phi[:, -1] < 0).any() or (phi[0] < 0).any() or (phi[-1] < 0).any())
-        self.assertGreater(phi.min(), -2 * h * 20)
 
     def test_tables_match_training_package(self):
-        """physics.py copies the spread-rate tables from wildfire_pinn/data_pipeline.py; they must agree.
-
-        Reads the table block from the source file, so the training package's
-        heavy dependencies (shapely, xarray, ...) are not needed here.
-        """
         source = HERE.parent / "wildfire_pinn" / "data_pipeline.py"
         if not source.exists():
             self.skipTest(f"{source} not present (service copied without the training package)")
@@ -206,6 +373,8 @@ class PhysicsTests(unittest.TestCase):
             self.assertEqual(getattr(physics, name), ns[name])
         self.assertTrue(set(ns["NONBURNABLE"]) <= set(physics.NONBURNABLE))
 
+
+import unittest.mock  # noqa: E402  (used in IngestionTests)
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,9 @@
-"""Load the daily feature file and sample it at arbitrary lon/lat points.
+"""Gridded .npz inputs: the bundled static layers, and the offline replay mode.
+
+Since sponsor guide rev 2 the backend writes no feature files; live requests use
+``native_ingestion``. This module still (a) reads the static LANDFIRE layers and
+(b) serves ``INGESTION=npz`` replays (tests, demos without network, historical
+cases), where one file holds every input for a day.
 
 The file layout is specified in ``feature_spec.md``. Two layouts are accepted:
 
@@ -7,8 +12,7 @@ The file layout is specified in ``feature_spec.md``. Two layouts are accepted:
 * stacked: ``lat``, ``lon``, ``features`` with shape (H, W, C) and ``channels``,
   a length-C array of channel names.
 
-Production reads ``gs://fightfirewai-features/daily/YYYY-MM-DD.npz``; local
-development reads ``$FEATURE_DIR/YYYY-MM-DD.npz``.
+Replays read ``$FEATURE_DIR/YYYY-MM-DD.npz`` (or a GCS template with FEATURE_SOURCE=gcs).
 """
 
 from __future__ import annotations
@@ -200,6 +204,7 @@ class Layers:
 
 
 def load_features(date: str) -> Layers:
+    """Daily replay file for ``date`` (YYYY-MM-DD) plus optional STATIC_LAYERS."""
     daily = _load_cached(date)
     static_path = os.environ.get("STATIC_LAYERS")
     return Layers(daily, _load_static(static_path) if static_path else None)
@@ -210,3 +215,73 @@ def _load_static(path: str) -> FeatureGrid:
     if not Path(path).exists():
         raise ServiceError(500, f"STATIC_LAYERS points at a missing file: {path}")
     return load_npz(path, path)
+
+
+# --------------------------------------------------------------------------- replay source
+
+class NpzEnvironment:
+    """Environment backed by a daily feature file (weather constant over the forecast)."""
+
+    def __init__(self, layers: Layers):
+        self.layers = layers
+        self.notes = list(layers.notes) + [f"replay inputs from {layers.daily.source}"]
+
+    def static(self, name, lon, lat):
+        return self.layers.sample(name, lon, lat, fill=0.0)
+
+    def wind(self, hour, lon, lat):
+        from .physics import wind_toward_from_met
+
+        if self.layers.has("wind_u") and self.layers.has("wind_v"):
+            u = np.nan_to_num(self.layers.sample("wind_u", lon, lat), nan=0.0)
+            v = np.nan_to_num(self.layers.sample("wind_v", lon, lat), nan=0.0)
+            speed = np.hypot(u, v)
+            safe = np.maximum(speed, 1e-9)
+            return speed, np.where(speed > 0, u / safe, 0.0), np.where(speed > 0, v / safe, 0.0)
+        speed = np.nan_to_num(self.layers.sample("wind_speed", lon, lat), nan=0.0)
+        east, north = wind_toward_from_met(np.nan_to_num(self.layers.sample("wind_dir", lon, lat), nan=0.0))
+        return speed, np.where(speed > 0, east, 0.0), np.where(speed > 0, north, 0.0)
+
+    def fm100(self, lon, lat):
+        return self.layers.sample("fm100_pct", lon, lat)
+
+
+class NpzSource:
+    """Offline replay: inputs from ``$FEATURE_DIR/YYYY-MM-DD.npz`` (see feature_spec.md)."""
+
+    name = "npz"
+
+    def __init__(self):
+        self._layers: Layers | None = None
+
+    def _load(self, req) -> Layers:
+        layers = load_features(req.day)
+        if not layers.daily.has("active_fire"):
+            raise ServiceError(422, "replay file has no active_fire channel")
+        missing = layers.missing_for_pinn()
+        if missing:
+            raise ServiceError(422, f"replay file lacks channels the PINN needs: {', '.join(missing)} (see feature_spec.md)")
+        return layers
+
+    def detections(self, req, search_bbox):
+        from .native_ingestion import Detections
+
+        layers = self._load(req)
+        self._layers = layers
+        daily = layers.daily
+        lon2, lat2 = np.meshgrid(daily.lon, daily.lat)
+        fire = np.nan_to_num(daily.channels["active_fire"], nan=0.0)
+        b = search_bbox
+        sel = (fire >= req.additional_params.fire_threshold) & (lon2 >= b[0]) & (lon2 <= b[2]) & (lat2 >= b[1]) & (lat2 <= b[3])
+        m_lat = 111132.92 - 559.82 * np.cos(2 * np.deg2rad(float(np.mean(daily.lat))))
+        m_lon = 111412.84 * np.cos(np.deg2rad(float(np.mean(daily.lat))))
+        half_diagonal = 0.5 * float(np.hypot(daily.dlat * m_lat, daily.dlon * m_lon))  # disks tile the pixels
+        n = int(sel.sum())
+        return Detections(lon2[sel], lat2[sel], np.full(n, half_diagonal), np.clip(fire[sel], 0, 1), "npz",
+                          [f"replay: {n} active_fire pixels from {daily.source}"])
+
+    def environment(self, req, lon0, lat0):
+        return NpzEnvironment(self._layers or self._load(req))
+
+    def describe(self) -> dict:
+        return {"ingestion": "npz replay", "feature_dir": os.environ.get("FEATURE_DIR", str(Path(__file__).resolve().parent / "test_features"))}

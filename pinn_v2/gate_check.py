@@ -3,6 +3,8 @@
     python -m pinn_v2.gate_check                 # both cases, ~5-15 min on a laptop CPU
     python -m pinn_v2.gate_check --quick         # 600 steps, a 1-2 min smoke run
     python -m pinn_v2.gate_check --case fuel     # one case
+    python -m pinn_v2.gate_check --sweep         # gate-1 round of fixes on the fuel case (~30-40 min)
+    python -m pinn_v2.gate_check --sweep --quick # same sweep at 1/20 of the steps: checks it runs (~2 min)
 
 The PINN (plan doc, "The v2 approach", steps 1-2):
 
@@ -179,7 +181,8 @@ def local_speed(case: Case, smooth_cells: float = 1.0) -> np.ndarray:
     return ndimage.gaussian_filter(f0, smooth_cells) if smooth_cells else f0
 
 
-def train_and_predict(case: Case, steps: int, batch: int, seed: int, ansatz: str = "local", log_every: int = 200):
+def train_and_predict(case: Case, steps: int, batch: int, seed: int, ansatz: str = "local", log_every: int = 200,
+                      lr: float = 1e-3, adaptive: bool = False):
     import torch
     from torch import nn
 
@@ -238,7 +241,7 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, ansatz: str
             return self.net(feats).squeeze(-1)
 
     model = HardICPINN().to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=1e-3)
+    opt = torch.optim.Adam(model.parameters(), lr=lr)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=steps, eta_min=1e-5)
 
     # collocation pool: cells the front can plausibly reach (plus a margin) and a uniform share
@@ -246,13 +249,33 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, ansatz: str
     band = np.argwhere((case.phi0 < reach) & (case.phi0 > -4 * case.res))
     every = np.argwhere(np.ones_like(case.phi0, dtype=bool))
 
+    hard = {"x": np.empty(0), "y": np.empty(0), "tau": np.empty(0)}   # adaptive pool (worst residuals)
+
     def draw(n):
-        n_band = int(0.8 * n)
-        pick = np.concatenate([band[rng.integers(0, len(band), n_band)], every[rng.integers(0, len(every), n - n_band)]])
+        n_hard = int(0.3 * n) if len(hard["x"]) else 0
+        n_band = int(0.8 * (n - n_hard))
+        pick = np.concatenate([band[rng.integers(0, len(band), n_band)], every[rng.integers(0, len(every), n - n_hard - n_band)]])
         jitter = rng.uniform(-0.5, 0.5, size=pick.shape) * case.res
         y = case.ys[pick[:, 0]] + jitter[:, 0]
         x = case.xs[pick[:, 1]] + jitter[:, 1]
-        return torch.as_tensor(x, **f32), torch.as_tensor(y, **f32), torch.rand(n, **f32)
+        tau = rng.uniform(0, 1, len(x))
+        if n_hard:
+            k = rng.integers(0, len(hard["x"]), n_hard)
+            x = np.concatenate([x, hard["x"][k] + rng.normal(0, 0.25 * case.res, n_hard)])
+            y = np.concatenate([y, hard["y"][k] + rng.normal(0, 0.25 * case.res, n_hard)])
+            tau = np.concatenate([tau, np.clip(hard["tau"][k] + rng.normal(0, 0.02, n_hard), 0, 1)])
+        return torch.as_tensor(x, **f32), torch.as_tensor(y, **f32), torch.as_tensor(tau, **f32)
+
+    def refresh_hard_pool(candidates: int = 16384, keep: int = 2048, cap: int = 16384):
+        """Residual-based adaptive refinement: score random candidates, keep the worst ones."""
+        x, y, tau = draw(candidates)
+        scores = []
+        for k in range(0, candidates, 4096):
+            r = residual(x[k:k + 4096], y[k:k + 4096], tau[k:k + 4096])
+            scores.append(r.detach().abs())
+        worst = torch.topk(torch.cat(scores), keep).indices.cpu().numpy()
+        for key, arr in (("x", x), ("y", y), ("tau", tau)):
+            hard[key] = np.concatenate([hard[key], arr.cpu().numpy()[worst]])[-cap:]
 
     def residual(x, y, tau):
         X = (x / L).requires_grad_(True)
@@ -275,6 +298,8 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, ansatz: str
     history = []
     started = time.perf_counter()
     for step in range(1, steps + 1):
+        if adaptive and step % 500 == 0:
+            refresh_hard_pool()
         x, y, tau = draw(batch)
         loss = torch.mean(residual(x, y, tau) ** 2)
         opt.zero_grad(set_to_none=True)
@@ -299,7 +324,7 @@ def train_and_predict(case: Case, steps: int, batch: int, seed: int, ansatz: str
                 out.append(model.g(torch.full_like(xs_, tau_val), xs_, ys_))
             g = torch.cat(out).cpu().numpy().reshape(X.shape)
             preds[h] = case.phi0 - tau_val * H * f0 + tau_val * S * g
-    meta = {"ansatz": ansatz, "steps": steps, "batch": batch, "seed": seed, "device": str(device), "r_ref_m_s": r_ref,
+    meta = {"ansatz": ansatz, "lr": lr, "adaptive": adaptive, "steps": steps, "batch": batch, "seed": seed, "device": str(device), "r_ref_m_s": r_ref,
             "train_seconds": round(time.perf_counter() - started, 1), "loss_history": history}
     return preds, meta, model
 
@@ -330,8 +355,9 @@ def figure(case: Case, preds, refs, path: Path) -> None:
     plt.close(fig)
 
 
-def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path, ansatz: str = "local") -> dict:
-    print(f"\n== {case.name} ({ansatz} ansatz): grid {case.phi0.shape}, {case.res:g} m cells, horizon 6 h; {case.notes}")
+def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path, ansatz: str = "local",
+        lr: float = 1e-3, adaptive: bool = False, tag: str = "") -> dict:
+    print(f"\n== {case.name} ({ansatz} ansatz{', ' + tag if tag else ''}, seed {seed}): grid {case.phi0.shape}, {case.res:g} m cells, horizon 6 h; {case.notes}")
     refs = reference(case)
     prior = {}
     if ansatz == "local":
@@ -339,7 +365,7 @@ def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path, ansatz: st
         prior = {h: compare(case.phi0 - h * 3600 * f0, refs[h], case.phi0, case.res) for h in HORIZONS_H}
         print("   first guess alone (no network): " + "; ".join(
             f"+{h} h IoU {prior[h]['iou']:.3f} / new {prior[h]['growth_iou']:.3f}" for h in HORIZONS_H))
-    preds, meta, model = train_and_predict(case, steps, batch, seed, ansatz)
+    preds, meta, model = train_and_predict(case, steps, batch, seed, ansatz, lr=lr, adaptive=adaptive)
     results = {h: compare(preds[h], refs[h], case.phi0, case.res) for h in HORIZONS_H}
     if case.name == "circle":
         for h in HORIZONS_H:
@@ -351,7 +377,7 @@ def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path, ansatz: st
     report = {"case": case.name, "ansatz": ansatz, "gate": GATE, "passed_at_6h": passed, "horizons": results,
               "first_guess_only": prior, "notes": case.notes, "training": meta}
     out_dir.mkdir(parents=True, exist_ok=True)
-    stem = f"{case.name}_{ansatz}"
+    stem = f"{case.name}_{ansatz}" + (f"_{tag}_s{seed}" if tag else "")
     (out_dir / f"{stem}.json").write_text(json.dumps(report, indent=2))
     figure(case, preds, refs, out_dir / f"{stem}.png")
     try:
@@ -369,6 +395,45 @@ def run(case: Case, steps: int, batch: int, seed: int, out_dir: Path, ansatz: st
     return report
 
 
+SWEEP = [  # (tag, steps, lr, adaptive, seeds) - the time-boxed round of standard PINN fixes
+    ("baseline", 4000, 1e-3, False, (0, 1, 2)),
+    ("adaptive", 4000, 1e-3, True, (0, 1, 2)),
+    ("adaptive_long", 10000, 5e-4, True, (0,)),
+]
+
+
+def sweep(out_dir: Path, batch: int, steps_scale: float = 1.0) -> None:
+    """Every SWEEP setting on the fuel case; writes sweep.csv and prints a comparison table."""
+    import csv
+
+    case = fuel_case()
+    rows = []
+    for tag, steps, lr, adaptive, seeds in SWEEP:
+        for seed in seeds:
+            rep = run(case, max(50, int(steps * steps_scale)), batch, seed, out_dir, "local", lr, adaptive, tag)
+            h6 = rep["horizons"][6]
+            rows.append({"setting": tag, "seed": seed, "steps": rep["training"]["steps"], "lr": lr, "adaptive": adaptive,
+                         "iou_6h": h6["iou"], "growth_iou_6h": h6["growth_iou"], "boundary_cells_6h": h6["boundary_cells"],
+                         "iou_3h": rep["horizons"][3]["iou"], "iou_1h": rep["horizons"][1]["iou"],
+                         "final_residual": rep["training"]["loss_history"][-1][1],
+                         "train_s": rep["training"]["train_seconds"], "gate": "PASS" if rep["passed_at_6h"] else "FAIL"})
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with open(out_dir / "sweep.csv", "w", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    print("\n=== SWEEP (fuel case, 6 h vs solver; gate: IoU >= 0.90, new-area >= 0.70, boundary <= 2 cells)")
+    print(f"{'setting':15s} {'seed':>4s} {'steps':>6s} {'IoU':>6s} {'new':>6s} {'bound':>6s} {'resid':>8s} gate")
+    for r in rows:
+        print(f"{r['setting']:15s} {r['seed']:4d} {r['steps']:6d} {r['iou_6h']:6.3f} {r['growth_iou_6h']:6.3f} "
+              f"{r['boundary_cells_6h']:6.2f} {r['final_residual']:8.2e} {r['gate']}")
+    for tag in dict.fromkeys(r["setting"] for r in rows):
+        ious = np.array([r["iou_6h"] for r in rows if r["setting"] == tag])
+        spread = f" +/- {ious.std(ddof=1):.3f} (sd, n={len(ious)})" if len(ious) > 1 else ""
+        print(f"  {tag}: mean 6 h IoU {ious.mean():.3f}{spread}")
+    print(f"(first guess alone: 6 h IoU 0.808; table saved to {out_dir / 'sweep.csv'})")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--case", choices=["circle", "fuel", "all"], default="all")
@@ -376,14 +441,21 @@ def main() -> None:
     parser.add_argument("--batch", type=int, default=4096)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ansatz", choices=["local", "plain"], default="local")
-    parser.add_argument("--quick", action="store_true", help="600 steps, batch 2048")
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--adaptive", action="store_true", help="residual-based adaptive sampling every 500 steps")
+    parser.add_argument("--sweep", action="store_true", help="run the gate-1 sweep on the fuel case (~30-40 min CPU)")
+    parser.add_argument("--quick", action="store_true", help="600 steps, batch 2048 (with --sweep: 1/20 of the steps)")
     parser.add_argument("--out", default=str(REPO / "outputs" / "pinn_v2_gate"))
     args = parser.parse_args()
+    if args.sweep:
+        sweep(Path(args.out) / ("sweep_quick" if args.quick else "sweep"), 2048 if args.quick else args.batch, 0.05 if args.quick else 1.0)
+        return
     if args.quick:
         args.steps, args.batch = 600, 2048
     builders = {"circle": circle_case, "fuel": fuel_case}
     names = list(builders) if args.case == "all" else [args.case]
-    summary = {n: run(builders[n](), args.steps, args.batch, args.seed, Path(args.out), args.ansatz)["passed_at_6h"] for n in names}
+    tag = "adaptive" if args.adaptive else ""
+    summary = {n: run(builders[n](), args.steps, args.batch, args.seed, Path(args.out), args.ansatz, args.lr, args.adaptive, tag)["passed_at_6h"] for n in names}
     print("\nSUMMARY:", ", ".join(f"{n} {'PASS' if ok else 'FAIL'}" for n, ok in summary.items()))
     if args.quick:
         print("(quick run: too few steps to judge the gate; run without --quick for the real check)")

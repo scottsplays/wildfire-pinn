@@ -122,19 +122,30 @@ def propagate(
     times_s,
     cfl: float = 0.45,
     c_wdir: float = C_WDIR,
+    eccentricity: float | None = None,
 ) -> dict[float, np.ndarray]:
     """Advance phi (meters, negative inside) to each time in ``times_s``.
 
     ``rate`` is R in m/s on the same grid. ``wind_toward`` is (east, north) unit
     components, or None for no direction. Axis 0 of every array is northing
     (increasing), axis 1 is easting (increasing).
+
+    Front shape: by default F = R (1 + c_wdir n.w)_+ (the v0.2 service shape). With
+    ``eccentricity`` e, F = R (1 - e) / (1 - e n.w): an ellipse with head speed R whose
+    length-to-breadth ratio comes from the wind (``ellipse_eccentricity``). This is the
+    shape used by the calibrated v0.3 forecast and validated on real fires.
     """
     field = np.asarray(phi0, dtype=np.float64).copy()
     rate = np.asarray(rate, dtype=np.float64)
     if field.shape != rate.shape or min(field.shape) < 3:
         raise ValueError("phi and rate must share a 2-D shape of at least 3x3")
     targets = sorted({float(t) for t in times_s})
-    f_max = float(rate.max()) * (1.0 + (c_wdir if wind_toward is not None else 0.0))
+    ellipse = eccentricity is not None and wind_toward is not None
+    if ellipse:
+        e = float(np.clip(eccentricity, 0.0, 0.9999))
+        f_max = float(rate.max())               # the head is the fastest point of an ellipse
+    else:
+        f_max = float(rate.max()) * (1.0 + (c_wdir if wind_toward is not None else 0.0))
     out: dict[float, np.ndarray] = {}
     current = 0.0
     if f_max <= 0:
@@ -147,7 +158,10 @@ def propagate(
                 gy, gx = np.gradient(field, spacing_m)
                 norm = np.sqrt(gx * gx + gy * gy) + 1e-12
                 align = (wind_toward[0] * gx + wind_toward[1] * gy) / norm
-                speed = rate * np.maximum(1.0 + c_wdir * align, 0.0)
+                if ellipse:
+                    speed = rate * (1.0 - e) / (1.0 - e * align)
+                else:
+                    speed = rate * np.maximum(1.0 + c_wdir * align, 0.0)
             else:
                 speed = rate
             field -= dt * speed * _upwind_magnitude(field, spacing_m)
@@ -160,3 +174,13 @@ def wind_toward_from_met(direction_from_deg) -> tuple[np.ndarray, np.ndarray]:
     """Meteorological 'from' direction (deg clockwise from north) -> toward unit vector."""
     rad = np.deg2rad(np.asarray(direction_from_deg, dtype=np.float64)) + np.pi
     return np.sin(rad), np.cos(rad)
+
+
+WAF = 0.4   # 10 m wind -> midflame wind for partly sheltered fuels
+
+
+def ellipse_eccentricity(wind_speed_10m: float) -> float:
+    """Fire-ellipse eccentricity from Anderson (1983) length-to-breadth, midflame wind in mi/h."""
+    u = WAF * max(float(wind_speed_10m), 0.0) * 2.237
+    lb = max(0.936 * np.exp(0.2566 * u) + 0.461 * np.exp(-0.1548 * u) - 0.397, 1.0)
+    return float(np.sqrt(1.0 - 1.0 / lb ** 2))

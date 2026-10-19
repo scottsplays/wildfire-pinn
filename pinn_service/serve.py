@@ -91,7 +91,11 @@ def health() -> dict:
         source = make_source().describe()
     except ServiceError as exc:
         source = {"ingestion_error": exc.detail}
-    return {"status": "ok", "models_loaded": True, "model_version": MODEL_VERSION, "grid": grid.name} | source
+    from pinn_service.calibrated import learned_model
+
+    model = learned_model()
+    learned = {"learned_alpha_model": bool(model)} | ({"learned_alpha_sha256_12": model["_sha"]} if model else {})
+    return {"status": "ok", "models_loaded": True, "model_version": MODEL_VERSION, "grid": grid.name} | learned | source
 
 
 @app.post(PREDICT_ROUTE)

@@ -59,7 +59,7 @@ DEFAULT_STATIC = PACKAGE_DIR / "static" / "bay_area_static.npz"
 def _urllib_fetch(url: str, timeout: float = 30.0) -> bytes:
     import urllib.error
 
-    request = urllib.request.Request(url, headers={"User-Agent": "WildfirePINN/0.2 (research)"})
+    request = urllib.request.Request(url, headers={"User-Agent": "WildfirePINN/0.3 (research)"})
     last = ""
     for attempt in range(2):
         try:
@@ -103,12 +103,18 @@ class Detections:
     confidence: np.ndarray     # 0..1, used as horizon-0 probability
     source: str
     notes: list[str] = field(default_factory=list)
+    time_s: np.ndarray | None = None   # acquisition time, Unix seconds (NaN or None = unknown)
+
+    def __post_init__(self):
+        if self.time_s is None:
+            self.time_s = np.full(len(self.lon), np.nan)
 
     def __len__(self) -> int:
         return len(self.lon)
 
     def subset(self, mask: np.ndarray) -> "Detections":
-        return Detections(self.lon[mask], self.lat[mask], self.radius_m[mask], self.confidence[mask], self.source, self.notes)
+        return Detections(self.lon[mask], self.lat[mask], self.radius_m[mask], self.confidence[mask], self.source,
+                          self.notes, self.time_s[mask])
 
 
 class Environment:
@@ -124,6 +130,12 @@ class Environment:
         raise NotImplementedError
 
     def fm100(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
+        raise NotImplementedError
+
+    def conditions(self, moment: dt.datetime) -> tuple[float, float, float, float]:
+        """Point conditions at the fire for any hour in the fetched window (past or future):
+        (10 m wind speed m/s, wind FROM degrees, fine-fuel moisture % (Simard EMC from RH/T),
+        100-h fuel moisture %). Used by the calibrated forecast."""
         raise NotImplementedError
 
 
@@ -226,7 +238,7 @@ def firms_detections(search_bbox: list[float], ref: dt.datetime, lookback_h: flo
     if failures and len(failures) == len(sources):
         raise ServiceError(503, "FIRMS unavailable: " + "; ".join(failures))
 
-    lon, lat, radius, conf = [], [], [], []
+    lon, lat, radius, conf, times = [], [], [], [], []
     seen = set()
     for row in rows:
         c = _confidence(row.get("confidence", ""))
@@ -250,10 +262,11 @@ def firms_detections(search_bbox: list[float], ref: dt.datetime, lookback_h: flo
         lat.append(y)
         radius.append(math.sqrt(scan * track / math.pi) * 1000.0)
         conf.append(c)
+        times.append(when.timestamp())
     notes = [f"FIRMS {', '.join(sources)}: {len(lon)} detections (nominal/high) in the {lookback_h:g} h before {ref:%Y-%m-%dT%H:%MZ}"]
     if failures:
         notes.append("FIRMS partial: " + "; ".join(failures))
-    return Detections(np.array(lon), np.array(lat), np.array(radius), np.array(conf), "firms", notes)
+    return Detections(np.array(lon), np.array(lat), np.array(radius), np.array(conf), "firms", notes, np.array(times, dtype=float))
 
 
 # --------------------------------------------------------------------------- weather
@@ -343,15 +356,16 @@ def parse_gridmet_csv(text: str) -> float:
 
 
 def unpack_fm100(raw: float) -> float | None:
-    """gridMET packs fm100 as an integer with scale_factor 0.1, and the THREDDS point-CSV
-    service returns the packed number (seen live: 149.0 'Percent' = 14.9 %). Physical
-    100-h fuel moisture stays below ~60 %, so values in (60, 600] are unpacked; the
-    32767 fill value and anything else implausible is rejected."""
-    if 0 < raw <= 60:
-        return raw
-    if 60 < raw <= 600:
-        return raw * 0.1
-    return None
+    """gridMET stores fm100 as an integer with scale_factor 0.1, and the THREDDS point-CSV
+    service returns that packed integer (seen live: 149.0 'Percent' = 14.9 %, 45.0 = 4.5 %).
+    So a whole number is always packed and is divided by 10. A value with decimals is already
+    in percent and kept. The 32767 fill value and anything outside 1-60 % is rejected.
+    (An earlier rule kept packed values <= 60 as-is, reading 4.5 % as 45 %: no spread on
+    the driest days.)"""
+    if raw != raw or raw <= 0:
+        return None
+    value = raw * 0.1 if float(raw).is_integer() else float(raw)
+    return value if 1.0 <= value <= 60.0 else None
 
 
 def emc_percent(temp_c: np.ndarray, rh: np.ndarray) -> np.ndarray:
@@ -370,11 +384,13 @@ def emc_percent(temp_c: np.ndarray, rh: np.ndarray) -> np.ndarray:
 class NativeEnvironment(Environment):
     """Weather from one point (the fire centroid), uniform across the window, hour by hour."""
 
-    def __init__(self, lon0: float, lat0: float, ref: dt.datetime, hours: int):
+    def __init__(self, lon0: float, lat0: float, ref: dt.datetime, hours: int, history_hours: float = 24.0):
         self.notes: list[str] = []
         self._static = static_layers()
         self.ref = ref
-        weather = open_meteo_hourly(lon0, lat0, ref - dt.timedelta(hours=24), ref + dt.timedelta(hours=hours + 1))
+        weather = open_meteo_hourly(lon0, lat0, ref - dt.timedelta(hours=max(24.0, history_hours)),
+                                    ref + dt.timedelta(hours=max(hours, 12) + 1))
+        self._emc = np.clip(emc_percent(weather.temp_c, weather.rh), 2.0, 35.0)
         self.weather = weather
         self._hours = []
         for i in range(max(hours, 1)):
@@ -405,15 +421,23 @@ class NativeEnvironment(Environment):
     def fm100(self, lon, lat):
         return np.full(np.shape(lon), self._fm100)
 
+    def conditions(self, moment):
+        k = self.weather.at(moment)
+        return float(self.weather.wind_speed[k]), float(self.weather.wind_from[k]), float(self._emc[k]), float(self._fm100)
+
 
 class NativeSource:
     name = "native"
 
     def detections(self, req: PredictionRequest, search_bbox: list[float]) -> Detections:
-        return firms_detections(search_bbox, req.reference_time, req.additional_params.lookback_hours)
+        p = req.additional_params
+        hours = max(p.lookback_hours, p.history_hours) if p.method in ("calibrated", "nowcast") else p.lookback_hours
+        return firms_detections(search_bbox, req.reference_time, hours)
 
     def environment(self, req: PredictionRequest, lon0: float, lat0: float) -> Environment:
-        return NativeEnvironment(lon0, lat0, req.reference_time, max(req.horizons))
+        p = req.additional_params
+        history = max(p.lookback_hours, p.history_hours) if p.method in ("calibrated", "nowcast") else 24.0
+        return NativeEnvironment(lon0, lat0, req.reference_time, max(req.horizons), history)
 
     def fuel(self, lon: np.ndarray, lat: np.ndarray) -> np.ndarray:
         return static_layers().sample("fuel_fbfm40", lon, lat, fill=0.0)

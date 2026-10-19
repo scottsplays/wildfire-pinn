@@ -18,6 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
+from pinn_service import calibrated as cal
 from pinn_service import native_ingestion as ni
 from pinn_service import physics
 from pinn_service.contract import parse_reference_time
@@ -56,7 +57,7 @@ class FakeFetch:
             return self._open_meteo(url)
         if "thredds" in host:
             return b'time,latitude[unit="degrees_north"],longitude[unit="degrees_east"],dead_fuel_moisture_100hr[unit="Percent"]\n' \
-                   b"2026-10-15T00:00:00Z,37.17,-122.22,7.4\n2026-10-16T00:00:00Z,37.17,-122.22,7.0\n"
+                   b"2026-10-15T00:00:00Z,37.17,-122.22,74.0\n2026-10-16T00:00:00Z,37.17,-122.22,70.0\n"  # packed, = 7.4 / 7.0 %
         raise AssertionError(f"unexpected URL {url}")
 
     def _firms(self, url: str) -> bytes:
@@ -72,6 +73,13 @@ class FakeFetch:
             rows.append(f"37.30000,-122.40000,301.0,0.39,0.36,{FIRE_DAY},2000,N,VIIRS,l,2.0NRT,280.0,1.1,D")      # low confidence: dropped
             if bbox[0] <= -122.3 <= bbox[2] and bbox[1] <= 37.7 <= bbox[3]:
                 rows.append(f"37.70000,-122.30000,360.0,0.39,0.36,{FIRE_DAY},2000,N,VIIRS,h,2.0NRT,300.0,40.0,D")  # 'refinery flare' on non-burnable land
+        if source == "VIIRS_NOAA20_NRT" and FIRE_DAY in dates:
+            # an earlier overpass (09:30 UTC) that saw only the fire's core: gives the calibrated method a growth interval
+            cx = np.mean([p[0] for p in self.fire_points])
+            cy = np.mean([p[1] for p in self.fire_points])
+            for x, y, conf in self.fire_points:
+                if np.hypot((x - cx) * 0.8, y - cy) < 0.008 and bbox[0] <= x <= bbox[2] and bbox[1] <= y <= bbox[3]:
+                    rows.append(f"{y:.5f},{x:.5f},335.0,0.39,0.36,{FIRE_DAY},0930,1,VIIRS,{conf},2.0NRT,288.0,8.0,N")
         if source == "VIIRS_NOAA20_NRT" and "2026-10-14" in dates:
             rows.append(f"37.17000,-122.22000,340.0,0.39,0.36,2026-10-14,2000,1,VIIRS,h,2.0NRT,290.0,9.0,D")  # older than lookback
         return ("\n".join(rows) + "\n").encode()
@@ -197,7 +205,9 @@ class IngestionTests(unittest.TestCase):
     def test_firms_filters_low_confidence_and_old(self):
         ref = parse_reference_time(FIRE_DAY)
         dets = ni.firms_detections(BBOX, ref, 24)
-        self.assertEqual(len(dets), len(FAKE.fire_points) + 1)  # + the non-wildland hot spot (rejected later, not here)
+        early = sum(1 for t in dets.time_s if dt.datetime.fromtimestamp(t, dt.timezone.utc).hour == 9)
+        self.assertGreater(early, 0)
+        self.assertEqual(len(dets) - early, len(FAKE.fire_points) + 1)  # + the non-wildland hot spot (rejected later, not here)
         self.assertTrue(np.all(dets.confidence >= 0.8))
         self.assertTrue(np.allclose(dets.radius_m, np.sqrt(0.39 * 0.36 / np.pi) * 1000))
 
@@ -265,6 +275,8 @@ class IngestionTests(unittest.TestCase):
         self.assertAlmostEqual(ni.parse_gridmet_csv(live), 14.9)
         self.assertIsNone(ni.unpack_fm100(32767.0))
         self.assertEqual(ni.unpack_fm100(7.5), 7.5)
+        self.assertAlmostEqual(ni.unpack_fm100(45.0), 4.5)    # packed dry-season value, not 45 %
+        self.assertAlmostEqual(ni.unpack_fm100(60.0), 6.0)
 
 
 class RequestHandlingTests(unittest.TestCase):
@@ -330,6 +342,135 @@ class RequestHandlingTests(unittest.TestCase):
                 status, payload = handle(body)
                 self.assertEqual(status, expected)
                 self.assertIn("detail", payload)
+
+
+class CalibratedMethodTests(unittest.TestCase):
+    """v0.3.0: growth between two overpasses calibrates alpha; the learned model adjusts it."""
+
+    def test_default_is_calibrated_two_pass(self):
+        status, fc = handle(request())
+        self.assertEqual(status, 200)
+        fire = fc["metadata"]["fires"][0]
+        self.assertEqual(fc["metadata"]["method"], "calibrated")
+        self.assertIn(fire["calibration_mode"], {"learned", "last-interval"})
+        self.assertEqual(fire["calibration_interval"][0][11:16], "09:30")
+        self.assertTrue(cal.ALPHAS[0] <= fire["alpha"] <= cal.ALPHAS[-1])
+        self.assertEqual(fire["resolution_m"], 180.0)
+
+    def test_learned_model_is_used(self):
+        import tempfile
+
+        names = list(cal.features(np.full((5, 5), 101.0), np.zeros((5, 5)), np.eye(5, dtype=bool), np.zeros((5, 5), bool),
+                                  np.ones((5, 5)), 180.0, StubEnv(), 0.0, 3 * 3600.0, 0.3))
+        model = {"features": names, "mu": [0.0] * len(names), "sd": [1.0] * len(names),
+                 "w": [float(np.log(0.5))] + [0.0] * len(names), "alpha_min": 0.01, "alpha_max": 6.0,
+                 "fallback_alpha": 0.3, "rmse_log_alpha_LOFO": 0.9, "trained_on": "unit test"}
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "learned_alpha.json"
+            path.write_text(json.dumps(model))
+            with unittest.mock.patch.dict(os.environ, {"LEARNED_ALPHA": str(path)}):
+                status, fc = handle(request(time_horizon=1))
+        fire = fc["metadata"]["fires"][0]
+        self.assertEqual(status, 200)
+        self.assertEqual(fire["calibration_mode"], "learned")
+        self.assertAlmostEqual(fire["alpha"], 0.5, places=3)          # intercept-only model -> exp(log 0.5)
+        self.assertEqual(fire["alpha_log_sigma"], 0.9)
+        self.assertEqual(set(fire["alpha_features"]), set(names))
+
+    def test_physics_method_still_available(self):
+        status, fc = handle(request(additional_params={"method": "physics"}))
+        self.assertEqual(status, 200)
+        self.assertEqual(fc["metadata"]["method"], "physics")
+        self.assertNotIn("calibration_mode", fc["metadata"]["fires"][0])
+        self.assertEqual(handle(request(additional_params={"method": "magic"}))[0], 422)
+
+    def test_ellipse_head_speed(self):
+        """With an ellipse the head moves at R; the back far slower."""
+        n, h, r, t = 201, 30.0, 0.05, 3600.0
+        yy, xx = np.mgrid[0:n, 0:n]
+        burned = np.hypot(xx - 100, yy - 100) * h <= 300.0
+        e = physics.ellipse_eccentricity(8.0)
+        phi = physics.propagate(signed_distance(burned, h), h, np.full((n, n), r), (1.0, 0.0), [t], eccentricity=e)[t]
+        row = phi[100] < 0
+        head = (np.flatnonzero(row).max() - 100) * h
+        back = (100 - np.flatnonzero(row).min()) * h
+        self.assertAlmostEqual(head, 300.0 + r * t, delta=2 * h)
+        self.assertLess(back, 300.0 + 0.5 * r * t)
+        self.assertGreater(e, 0.5)
+        self.assertEqual(physics.ellipse_eccentricity(0.0), 0.0)
+
+    def test_active_field_holds_quiet_edge(self):
+        n, res = 81, 180.0
+        yy, xx = np.mgrid[0:n, 0:n]
+        prev = np.hypot(xx - 40, yy - 40) <= 10
+        start = prev | ((np.hypot(xx - 40, yy - 40) <= 14) & (xx > 45))      # grew only to the east
+        act = cal.active_field(start, prev, res)
+        self.assertEqual(act[40, 40 + 16], 1.0)    # in front of the growing east edge
+        self.assertEqual(act[40, 40 - 12], 0.0)    # in front of the quiet west edge
+        self.assertTrue(np.all(act[start] == 1.0))
+
+    def test_area_matched_alpha_recovers_truth(self):
+        n, res, span = 81, 180.0, 6.0
+        yy, xx = np.mgrid[0:n, 0:n]
+        prev = np.hypot(xx - 40, yy - 40) <= 4
+        rate = np.full((n, n), 0.1)
+        truth = 0.4
+        phi = cal._advance(cal.signed_distance(prev, res), res, rate, 270.0, 3.0, truth * span * 3600.0)
+        observed = int(((phi < 0) & ~prev).sum())
+        alpha = cal.pick_alpha(cal.area_curve(prev, res, rate, 270.0, 3.0, span, observed), observed)
+        self.assertLess(abs(np.log(alpha / truth)), 0.2)
+
+    def test_single_pass_falls_back(self):
+        os.environ["INGESTION"] = "npz"
+        try:
+            status, fc = handle(request())
+        finally:
+            os.environ["INGESTION"] = "native"
+        self.assertEqual(status, 200)
+        self.assertEqual(fc["metadata"]["fires"][0]["calibration_mode"], "fallback")
+
+    def test_nowcast_method(self):
+        status, fc = handle(request(additional_params={"method": "nowcast"}))
+        self.assertEqual(status, 200)
+        self.assertEqual(validate(fc, BBOX, {0, 1, 3, 6})[0], [])
+        fire = fc["metadata"]["fires"][0]
+        self.assertEqual(fc["metadata"]["method"], "nowcast")
+        self.assertIn("active-edge", fire["nowcast"])
+        self.assertGreater(fire["observed_growth_km2_per_h"], 0)
+        probs = [f["properties"]["fire_probability"] for f in fc["features"] if f["properties"]["horizon_hours"] == 6]
+        self.assertTrue(any(p == 1.0 for p in probs))                     # the burning fire
+        self.assertTrue(any(0 < p <= 0.407 + 1e-9 for p in probs))        # calibrated new growth (max 0.407)
+
+    def test_nowcast_probability_shape(self):
+        n, res = 61, 180.0
+        yy, xx = np.mgrid[0:n, 0:n]
+        start = np.hypot(xx - 30, yy - 30) <= 5
+        act = np.ones((n, n))
+        cfg = cal.NOWCAST_DEFAULTS
+        p = cal.nowcast_probability(start, act, res, 2.0, 6.0, 1.4, cfg["prob_calibration"])
+        self.assertTrue(np.all(p[start] == 1.0))
+        self.assertGreater(p[30, 36], p[30, 45])                          # nearer the edge is more likely
+        self.assertLessEqual(p[~start].max(), 0.407 + 1e-9)
+        act[:, :30] = 0                                                    # west side quiet: no growth there
+        p = cal.nowcast_probability(start, act, res, 2.0, 6.0, 1.4, cfg["prob_calibration"])
+        self.assertEqual(p[30, 20], 0.0)
+
+    def test_nowcast_single_pass_falls_back(self):
+        os.environ["INGESTION"] = "npz"
+        try:
+            status, fc = handle(request(additional_params={"method": "nowcast"}))
+        finally:
+            os.environ["INGESTION"] = "native"
+        self.assertEqual(status, 200)
+        self.assertIn("fallback", fc["metadata"]["fires"][0]["nowcast"])
+
+    def test_passes_group_within_20_minutes(self):
+        self.assertEqual(cal.pass_times(np.array([0.0, 300.0, 3000.0, 3060.0, 9000.0])), [0.0, 3000.0, 9000.0])
+
+
+class StubEnv:
+    def conditions(self, moment):
+        return 5.0, 270.0, 6.0, 8.0
 
 
 class ReplayModeTests(unittest.TestCase):

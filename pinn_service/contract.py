@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 SUPPORTED_HORIZONS = (0, 1, 3, 6)
 MODEL_TYPE = "pinn"
-MODEL_VERSION = "0.2.2-physics-baseline"
+MODEL_VERSION = "0.3.0-calibrated"
 DEFAULT_PORT = 8082
 DEFAULT_HOUR_UTC = 21          # sponsor FAQ Q2: date-only requests mean 21:00 UTC
 BAY_AREA_BBOX = (-122.9, 36.9, -121.5, 38.3)
@@ -39,7 +39,9 @@ class AdditionalParams(BaseModel):
     search_buffer_m: float = Field(5000.0, ge=0.0, le=50000.0, description="look for the fire this far outside the bbox")
     fire_threshold: float = Field(0.5, gt=0.0, le=1.0)
     min_burnable_share: float = Field(0.25, ge=0.0, le=1.0, description="drop detection groups with less burnable fuel than this within 500 m (refineries, flares, crop burns)")
-    resolution_m: float = Field(90.0, ge=30.0, le=1000.0)
+    method: str = Field("calibrated", pattern="^(calibrated|nowcast|physics)$", description="'calibrated' (v0.3 physics-informed ML, default), 'nowcast' (v0.4 active-edge persistence with calibrated probabilities) or 'physics' (the v0.2 uncalibrated baseline)")
+    history_hours: float = Field(96.0, ge=0.0, le=120.0, description="calibrated: FIRMS detections this far back give the fire's recent growth (5-day FIRMS API limit)")
+    resolution_m: float = Field(90.0, ge=30.0, le=1000.0, description="physics method; the calibrated method uses 180 m (its validated grid) unless this is set")
     margin_m: float = Field(6000.0, ge=1000.0, le=30000.0)
     rate_log_sigma: float = Field(0.5, ge=0.0, le=2.0)
     wind_dir_sigma_deg: float = Field(20.0, ge=0.0, le=90.0)

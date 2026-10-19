@@ -222,9 +222,10 @@ def _load_static(path: str) -> FeatureGrid:
 class NpzEnvironment:
     """Environment backed by a daily feature file (weather constant over the forecast)."""
 
-    def __init__(self, layers: Layers):
+    def __init__(self, layers: Layers, lon0: float | None = None, lat0: float | None = None):
         self.layers = layers
         self.notes = list(layers.notes) + [f"replay inputs from {layers.daily.source}"]
+        self.lon0, self.lat0 = lon0, lat0
 
     def static(self, name, lon, lat):
         return self.layers.sample(name, lon, lat, fill=0.0)
@@ -244,6 +245,15 @@ class NpzEnvironment:
 
     def fm100(self, lon, lat):
         return self.layers.sample("fm100_pct", lon, lat)
+
+    def conditions(self, moment):
+        """Replays hold one daily snapshot: the same conditions every hour. With no RH/T in the
+        file, the fine-fuel moisture falls back to FM100."""
+        point = (np.array([self.lon0]), np.array([self.lat0]))
+        speed, east, north = (float(v[0]) for v in self.wind(0, *point))
+        wind_from = float(np.rad2deg(np.arctan2(-east, -north)) % 360) if speed > 0 else 0.0
+        fm = float(np.nan_to_num(self.fm100(*point)[0], nan=10.0))
+        return speed, wind_from, float(np.clip(fm, 2.0, 35.0)), fm
 
 
 class NpzSource:
@@ -281,7 +291,7 @@ class NpzSource:
                           [f"replay: {n} active_fire pixels from {daily.source}"])
 
     def environment(self, req, lon0, lat0):
-        return NpzEnvironment(self._layers or self._load(req))
+        return NpzEnvironment(self._layers or self._load(req), lon0, lat0)
 
     def fuel(self, lon, lat):
         return self._layers.sample("fuel_fbfm40", lon, lat, fill=0.0)

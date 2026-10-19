@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 SUPPORTED_HORIZONS = (0, 1, 3, 6)
 MODEL_TYPE = "pinn"
-MODEL_VERSION = "0.3.0-calibrated"
+MODEL_VERSION = "0.3.1-calibrated"
 DEFAULT_PORT = 8082
 DEFAULT_HOUR_UTC = 21          # sponsor FAQ Q2: date-only requests mean 21:00 UTC
 BAY_AREA_BBOX = (-122.9, 36.9, -121.5, 38.3)

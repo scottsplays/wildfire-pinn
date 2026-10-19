@@ -2,7 +2,7 @@
 
 This is the PINN's black-box service for the Fight Fire With AI backend, built to the sponsor's integration guide (rev 2, Oct 16 2026). The ML adapter on :8001 routes `model_type="pinn"` here. The service fetches its own inputs (native ingestion) and returns one GeoJSON FeatureCollection of ~1 km cells with `fire_probability` for horizons 0, 1, 3 and 6 h.
 
-> **Research prototype, not an operational forecast.** Version `0.3.0-calibrated` is a physics-informed, data-calibrated level-set model: the fire's own growth between two VIIRS overpasses calibrates the spread rate, a learned model adjusts it, and quiet edges are held. On 19 held-out *test* fires (scored once) it more than doubled the 24 h new-area IoU of the v0.2 physics-only rate (0.159 vs 0.072) and predicted growth amounts close to what was observed (0.84×, against 16.5× for physics). It did not beat simple geometric baselines (see "Validation"). The v0.2 method is still available with `additional_params.method = "physics"`. Every response states the method in `metadata.forecast_method`.
+> **Research prototype, not an operational forecast.** Version `0.3.1-calibrated` is a physics-informed, data-calibrated level-set model: the fire's own growth between two VIIRS overpasses calibrates the spread rate, a learned model adjusts it, and quiet edges are held. On 19 held-out *test* fires (scored once) it more than doubled the 24 h new-area IoU of the v0.2 physics-only rate (0.159 vs 0.072) and predicted growth amounts close to what was observed (0.84×, against 16.5× for physics). It did not beat simple geometric baselines (see "Validation"). The v0.2 method is still available with `additional_params.method = "physics"`. Every response states the method in `metadata.forecast_method`.
 
 ## Run it locally (Windows PowerShell shown; bash is the same)
 
@@ -96,5 +96,28 @@ What the test shows:
 - **Calibration is what helps.** Fitting the rate to the fire's own recent growth, and holding quiet edges, fixes the physics model's 16× over-prediction.
 - **Physics did not place the new growth better than geometry.** Given the true amount of growth, the wind-ellipse and fuel shape scored lower than uniform growth on the active fronts (0.210 vs 0.230 at 24 h, CI below zero). At 12–24 h and VIIRS resolution, with weather taken at a single point, the physics shape adds no skill over that geometric baseline.
 - **The validation result shrank on the test set** (0.205 → 0.159). The test fires are mostly the August 2020 lightning siege, with many fires burning at once.
+
+### Fresh test: 2026 fires (scored once, 19 Oct 2026)
+
+The 2026 fires are 10 California wildfires from this season (January to October), found directly in VIIRS data; farmland and industrial heat are excluded. No method was developed on them. Results at 24 h:
+
+| Method | New-area IoU | Total IoU | Growth ratio |
+| --- | --- | --- | --- |
+| v0.2 physics only | 0.049 | 0.227 | 27× |
+| uniform buffer | 0.160 | 0.669 | 1.6× |
+| v0.3, 30-fire model | 0.158 | 0.654 | 1.9× |
+| **v0.3.1, 218-fire model (deployed)** | **0.164** | **0.719** | **0.82×** |
+| v0.4 nowcast (`method="nowcast"`) | 0.171 | 0.704 | 1.14× |
+
+- v0.3 beats v0.2 on 90 % of fires: +0.109 [+0.061, +0.158].
+- v0.4 and v0.3 are statistically tied: +0.013 [−0.033, +0.059].
+- Following the rule set before the test, v0.4 would become the default only if it clearly won, so v0.3 stays the default.
+- The 218-fire model was at least as good as the 30-fire one and much better on growth amount, so it replaced it as v0.3.1. The 30-fire model is kept as `static/learned_alpha_v030_30fires.json`.
+- The nowcast's calibrated probabilities carried over to the new fires: Brier skill +0.086 over the base rate, against −0.49 without calibration.
+
+**When physics helps** (validation fires, split by weather change with thresholds fixed in advance, `pinn_v2/physics_when.py`):
+- When wind or moisture changed between the observed interval and the forecast interval, the physics-informed amount beat persistence at 24 h: +0.022 [+0.002, +0.041] for the physics-calibrated amount placed on active edges, and +0.015 for the full level set.
+- In steady weather persistence was slightly better: −0.006.
+- So physics earns its place where the fire's recent past says nothing about the new conditions.
 
 v0.3 is deployed because it replaces the clearly worse v0.2 rate. It was the method frozen before the test, and the test set is not used to pick a different one. A switch to the active-front buffer, or a hybrid of the two, would need a new held-out evaluation, for example fires from the 2026 season.

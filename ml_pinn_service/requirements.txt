@@ -1,0 +1,11 @@
+numpy>=1.26
+scipy>=1.11
+pydantic>=2.6
+fastapi>=0.110
+uvicorn>=0.29
+# tests over HTTP (optional):
+httpx>=0.27
+# build_static_layers.py only (not needed in the container):
+#   rasterio>=1.3
+# FEATURE_SOURCE=gcs replays only:
+#   google-cloud-storage>=2.14

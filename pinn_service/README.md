@@ -25,9 +25,13 @@ python pinn_service/validate_contract.py response.json
 
 There is no network or key in replay mode: `python pinn_service/make_test_features.py`, then `$env:INGESTION="npz"` and run with `"date":"2026-10-16"`. That date is a synthetic fire in the Santa Cruz Mountains.
 
-Tests (repo root, no network needed): `python -m unittest pinn_service.tests.test_service -v`
+Tests (repo root, no network needed): `python -m unittest pinn_service.tests.test_service pinn_service.tests.test_scorecard -v`
 Check any response file against the contract: `python pinn_service/validate_contract.py response.json`
 Docker: see the header of `Dockerfile` (pass the FIRMS key with `-e`, never bake it in).
+
+## Forecast scorecard (accuracy checks)
+
+`POST /verify` (or `/predict` with `"task": "verify"` on Vertex AI) re-runs a past forecast exactly as it was issued and scores it against the VIIRS passes that came afterwards: new-area IoU, F1, precision, recall and growth ratio, next to a one-cell dilation baseline. `python -m pinn_service.scorecard --replay data/fires ...` does the same offline on saved past fires. Request format, statuses and the suggested backend wiring are in [SCORECARD.md](SCORECARD.md).
 
 ## What happens on a request
 
